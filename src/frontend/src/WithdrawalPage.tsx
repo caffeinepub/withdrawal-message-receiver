@@ -391,6 +391,32 @@ export default function WithdrawalPage({
           </div>
         ) : step === "details" ? (
           <>
+            <div
+              style={{
+                background: "linear-gradient(135deg, #7c1d1d 0%, #450a0a 100%)",
+                border: "2px solid #ef4444",
+                borderRadius: 10,
+                padding: "10px 14px",
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#fca5a5",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  fontWeight: 600,
+                }}
+              >
+                Do not enter incorrect details, otherwise the money will not be
+                transferred to your account.
+              </p>
+            </div>
             {(
               [
                 {

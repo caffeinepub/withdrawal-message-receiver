@@ -3,6 +3,7 @@ export interface User {
   email: string;
   passwordHash: string;
   highScore: number;
+  currentScore?: number;
   rupees: number;
   failedAttempts: number;
   lockoutUntil: number;

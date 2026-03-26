@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import LeaderboardModal from "./LeaderboardModal";
 import LoginScreen from "./LoginScreen";
 import PointsConverterPage from "./PointsConverterPage";
+import WithdrawalAdminPanel from "./WithdrawalAdminPanel";
 import WithdrawalPage from "./WithdrawalPage";
 import {
   type User,
@@ -490,7 +491,9 @@ export default function App() {
 
   const cellPreviewPx = Math.max(16, Math.floor(cellPx * 0.62));
 
-  const [view, setView] = useState<"game" | "withdraw" | "points">("game");
+  const [view, setView] = useState<"game" | "withdraw" | "points" | "admin">(
+    "game",
+  );
 
   useEffect(() => {
     gridRef.current = grid;
@@ -507,6 +510,7 @@ export default function App() {
         if (user) {
           setCurrentUser(savedUser);
           setHighScore(user.highScore);
+          setScore(user.currentScore ?? 0);
           setTotalRupees(user.rupees ?? 0);
           setGameState("idle");
           return;
@@ -845,6 +849,7 @@ export default function App() {
     const user = users.find((u) => u.username === username);
     if (user) {
       setHighScore(user.highScore);
+      setScore(user.currentScore ?? 0);
       setTotalRupees(user.rupees ?? 0);
     }
     saveSession(username);
@@ -852,6 +857,18 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Save current score for the user before logging out
+    if (currentUser) {
+      const users = getUsers();
+      const user = users.find((u) => u.username === currentUser);
+      if (user) {
+        saveUsers(
+          users.map((u) =>
+            u.username === currentUser ? { ...u, currentScore: score } : u,
+          ),
+        );
+      }
+    }
     setCurrentUser(null);
     setHighScore(0);
     setScore(0);
@@ -1129,6 +1146,9 @@ export default function App() {
   }
 
   // ─── Main Game UI ────────────────────────────────────────────────────────
+  if (view === "admin") {
+    return <WithdrawalAdminPanel onBack={() => setView("game")} />;
+  }
 
   if (view === "withdraw") {
     return (
@@ -2128,6 +2148,59 @@ export default function App() {
                 </span>
               </div>
             </button>
+            {currentUser === "ADARSH_CHAUDHARY_OWNER" && (
+              <button
+                type="button"
+                data-ocid="admin.open_modal_button"
+                style={{
+                  flex: 1,
+                  background:
+                    "linear-gradient(90deg, #1a0a3d 0%, #3b1f6e 40%, #4c1d95 60%, #3b1f6e 80%, #1a0a3d 100%)",
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  border: "none",
+                  borderLeft: "1px solid rgba(124,58,237,0.4)",
+                }}
+                onClick={() => setView("admin")}
+                aria-label="Open admin panel"
+              >
+                <span style={{ fontSize: "1.2rem" }}>🔐</span>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.55rem",
+                      color: "#c4b5fd",
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      fontWeight: 700,
+                    }}
+                  >
+                    OWNER
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      fontWeight: 900,
+                      color: "#a78bfa",
+                      textShadow: "0 0 12px #7c3aed88",
+                    }}
+                  >
+                    ADMIN
+                  </span>
+                </div>
+              </button>
+            )}
           </div>
           {/* Spacer so footer content isn't hidden by fixed bar */}
           <div style={{ height: 70 }} />
