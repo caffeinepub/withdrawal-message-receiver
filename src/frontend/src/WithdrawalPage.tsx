@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
+import { useActor } from "./hooks/useActor";
 
 interface WithdrawalPageProps {
+  username: string;
   totalRupees: number;
   onBack: () => void;
   onWithdraw: (amount: number) => void;
@@ -22,10 +24,12 @@ function getUpiQrUrl(upiId: string): string {
 }
 
 export default function WithdrawalPage({
+  username,
   totalRupees,
   onBack,
   onWithdraw,
 }: WithdrawalPageProps) {
+  const { actor } = useActor();
   const [step, setStep] = useState<"details" | "payment">("details");
 
   // Personal details
@@ -99,7 +103,7 @@ export default function WithdrawalPage({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!pointsInput || enteredPoints < MIN_POINTS) {
       setWithdrawError(
         `Minimum withdrawal is ${MIN_POINTS.toLocaleString("en-IN")} points`,
@@ -146,6 +150,36 @@ export default function WithdrawalPage({
     setSubmittedPayout(payout);
     setWithdrawSuccess(true);
     onWithdraw(enteredPoints);
+
+    // Fire-and-forget: send to admin panel backend
+    if (actor) {
+      const upiQrUrlValue = withdrawUpi.includes("@")
+        ? getUpiQrUrl(withdrawUpi)
+        : "";
+      try {
+        await actor.submitWithdrawal({
+          id: 0n,
+          username: username,
+          fullName,
+          address,
+          email,
+          phone,
+          points: BigInt(enteredPoints),
+          payoutRupees: payout,
+          paymentMethod: withdrawMethod ?? "",
+          upiId: withdrawUpi,
+          upiQrUrl: upiQrUrlValue,
+          uploadedQrBase64: uploadedQr ?? "",
+          bankAccount: withdrawAccount,
+          bankIfsc: withdrawIfsc,
+          bankHolderName: withdrawBankName,
+          timestamp: 0n,
+          status: "pending",
+        });
+      } catch {
+        // ignore — success already shown to user
+      }
+    }
   };
 
   const inputStyle: React.CSSProperties = {

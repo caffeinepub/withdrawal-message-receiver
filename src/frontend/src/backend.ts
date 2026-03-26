@@ -89,221 +89,74 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface WithdrawalRequestInput {
-    fullName: string;
-    email: string;
-    address: string;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-}
 export interface WithdrawalRequest {
     id: bigint;
-    status: RequestStatus;
+    status: string;
+    paymentMethod: string;
+    username: string;
+    bankAccount: string;
+    bankHolderName: string;
+    upiQrUrl: string;
+    uploadedQrBase64: string;
     fullName: string;
+    payoutRupees: number;
+    bankIfsc: string;
     email: string;
     address: string;
     timestamp: bigint;
     upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-}
-export interface UpdateStatusInput {
-    id: bigint;
-    status: RequestStatus;
-}
-export enum RequestStatus {
-    pending = "pending",
-    paid = "paid",
-    rejected = "rejected"
+    phone: string;
+    points: bigint;
 }
 export interface backendInterface {
-    getAllWithdrawalRequests(): Promise<Array<WithdrawalRequest>>;
-    getWithdrawalRequest(id: bigint): Promise<WithdrawalRequest>;
-    submitWithdrawalRequest(input: WithdrawalRequestInput): Promise<bigint>;
-    updateRequestStatus(input: UpdateStatusInput): Promise<void>;
+    getAllWithdrawals(): Promise<Array<WithdrawalRequest>>;
+    submitWithdrawal(request: WithdrawalRequest): Promise<bigint>;
+    updateWithdrawalStatus(id: bigint, newStatus: string): Promise<boolean>;
 }
-import type { RequestStatus as _RequestStatus, UpdateStatusInput as _UpdateStatusInput, WithdrawalRequest as _WithdrawalRequest, WithdrawalRequestInput as _WithdrawalRequestInput } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async getAllWithdrawalRequests(): Promise<Array<WithdrawalRequest>> {
+    async getAllWithdrawals(): Promise<Array<WithdrawalRequest>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllWithdrawalRequests();
-                return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAllWithdrawalRequests();
-            return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getWithdrawalRequest(arg0: bigint): Promise<WithdrawalRequest> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getWithdrawalRequest(arg0);
-                return from_candid_WithdrawalRequest_n2(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getWithdrawalRequest(arg0);
-            return from_candid_WithdrawalRequest_n2(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async submitWithdrawalRequest(arg0: WithdrawalRequestInput): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.submitWithdrawalRequest(to_candid_WithdrawalRequestInput_n7(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.getAllWithdrawals();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.submitWithdrawalRequest(to_candid_WithdrawalRequestInput_n7(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.getAllWithdrawals();
             return result;
         }
     }
-    async updateRequestStatus(arg0: UpdateStatusInput): Promise<void> {
+    async submitWithdrawal(arg0: WithdrawalRequest): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateRequestStatus(to_candid_UpdateStatusInput_n9(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.submitWithdrawal(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateRequestStatus(to_candid_UpdateStatusInput_n9(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.submitWithdrawal(arg0);
             return result;
         }
     }
-}
-function from_candid_RequestStatus_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _RequestStatus): RequestStatus {
-    return from_candid_variant_n5(_uploadFile, _downloadFile, value);
-}
-function from_candid_WithdrawalRequest_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _WithdrawalRequest): WithdrawalRequest {
-    return from_candid_record_n3(_uploadFile, _downloadFile, value);
-}
-function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Uint8Array]): Uint8Array | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    id: bigint;
-    status: _RequestStatus;
-    fullName: string;
-    email: string;
-    address: string;
-    timestamp: bigint;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode: [] | [Uint8Array];
-}): {
-    id: bigint;
-    status: RequestStatus;
-    fullName: string;
-    email: string;
-    address: string;
-    timestamp: bigint;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-} {
-    return {
-        id: value.id,
-        status: from_candid_RequestStatus_n4(_uploadFile, _downloadFile, value.status),
-        fullName: value.fullName,
-        email: value.email,
-        address: value.address,
-        timestamp: value.timestamp,
-        upiId: value.upiId,
-        contactNo: value.contactNo,
-        pointsAmount: value.pointsAmount,
-        qrCode: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.qrCode))
-    };
-}
-function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    pending: null;
-} | {
-    paid: null;
-} | {
-    rejected: null;
-}): RequestStatus {
-    return "pending" in value ? RequestStatus.pending : "paid" in value ? RequestStatus.paid : "rejected" in value ? RequestStatus.rejected : value;
-}
-function from_candid_vec_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_WithdrawalRequest>): Array<WithdrawalRequest> {
-    return value.map((x)=>from_candid_WithdrawalRequest_n2(_uploadFile, _downloadFile, x));
-}
-function to_candid_RequestStatus_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: RequestStatus): _RequestStatus {
-    return to_candid_variant_n12(_uploadFile, _downloadFile, value);
-}
-function to_candid_UpdateStatusInput_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UpdateStatusInput): _UpdateStatusInput {
-    return to_candid_record_n10(_uploadFile, _downloadFile, value);
-}
-function to_candid_WithdrawalRequestInput_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: WithdrawalRequestInput): _WithdrawalRequestInput {
-    return to_candid_record_n8(_uploadFile, _downloadFile, value);
-}
-function to_candid_record_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    id: bigint;
-    status: RequestStatus;
-}): {
-    id: bigint;
-    status: _RequestStatus;
-} {
-    return {
-        id: value.id,
-        status: to_candid_RequestStatus_n11(_uploadFile, _downloadFile, value.status)
-    };
-}
-function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    fullName: string;
-    email: string;
-    address: string;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-}): {
-    fullName: string;
-    email: string;
-    address: string;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode: [] | [Uint8Array];
-} {
-    return {
-        fullName: value.fullName,
-        email: value.email,
-        address: value.address,
-        upiId: value.upiId,
-        contactNo: value.contactNo,
-        pointsAmount: value.pointsAmount,
-        qrCode: value.qrCode ? candid_some(value.qrCode) : candid_none()
-    };
-}
-function to_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: RequestStatus): {
-    pending: null;
-} | {
-    paid: null;
-} | {
-    rejected: null;
-} {
-    return value == RequestStatus.pending ? {
-        pending: null
-    } : value == RequestStatus.paid ? {
-        paid: null
-    } : value == RequestStatus.rejected ? {
-        rejected: null
-    } : value;
+    async updateWithdrawalStatus(arg0: bigint, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateWithdrawalStatus(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateWithdrawalStatus(arg0, arg1);
+            return result;
+        }
+    }
 }
 export interface CreateActorOptions {
     agent?: Agent;

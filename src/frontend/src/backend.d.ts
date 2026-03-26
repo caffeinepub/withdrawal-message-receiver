@@ -7,39 +7,27 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface WithdrawalRequestInput {
-    fullName: string;
-    email: string;
-    address: string;
-    upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-}
 export interface WithdrawalRequest {
     id: bigint;
-    status: RequestStatus;
+    status: string;
+    paymentMethod: string;
+    username: string;
+    bankAccount: string;
+    bankHolderName: string;
+    upiQrUrl: string;
+    uploadedQrBase64: string;
     fullName: string;
+    payoutRupees: number;
+    bankIfsc: string;
     email: string;
     address: string;
     timestamp: bigint;
     upiId: string;
-    contactNo: string;
-    pointsAmount: bigint;
-    qrCode?: Uint8Array;
-}
-export interface UpdateStatusInput {
-    id: bigint;
-    status: RequestStatus;
-}
-export enum RequestStatus {
-    pending = "pending",
-    paid = "paid",
-    rejected = "rejected"
+    phone: string;
+    points: bigint;
 }
 export interface backendInterface {
-    getAllWithdrawalRequests(): Promise<Array<WithdrawalRequest>>;
-    getWithdrawalRequest(id: bigint): Promise<WithdrawalRequest>;
-    submitWithdrawalRequest(input: WithdrawalRequestInput): Promise<bigint>;
-    updateRequestStatus(input: UpdateStatusInput): Promise<void>;
+    getAllWithdrawals(): Promise<Array<WithdrawalRequest>>;
+    submitWithdrawal(request: WithdrawalRequest): Promise<bigint>;
+    updateWithdrawalStatus(id: bigint, newStatus: string): Promise<boolean>;
 }
