@@ -242,6 +242,15 @@ function hasAnyValidPlacement(grid: Grid, piece: Shape): boolean {
       if (canPlace(grid, piece, r, c)) return true;
   return false;
 }
+function findFirstValidSpot(
+  grid: Grid,
+  piece: Shape,
+): { row: number; col: number } | null {
+  for (let r = 0; r < GRID_SIZE; r++)
+    for (let c = 0; c < GRID_SIZE; c++)
+      if (canPlace(grid, piece, r, c)) return { row: r, col: c };
+  return null;
+}
 function placePiece(grid: Grid, piece: Shape, row: number, col: number): Grid {
   const newGrid = grid.map((r) => [...r]);
   for (let r = 0; r < piece.cells.length; r++)
@@ -270,7 +279,7 @@ function clearLines(grid: Grid, rows: number[], cols: number[]): Grid {
     for (let r = 0; r < GRID_SIZE; r++) newGrid[r][c] = null;
   return newGrid;
 }
-const STEP_PTS = [2, 3, 5, 6, 9];
+
 function calcScore(_rows: number[], _cols: number[]): number {
   return 0; // Points come from block placement steps, not line clears
 }
@@ -577,67 +586,29 @@ export default function App() {
     const onMove = (e: PointerEvent) => {
       const cx = e.clientX;
       const cy = e.clientY;
-      // Compute snap target: find nearest valid grid position
-      let snapTarget: { row: number; col: number } | null = null;
-      if (boardRef.current && dragging) {
-        const rect = boardRef.current.getBoundingClientRect();
-        let bestDist = Number.POSITIVE_INFINITY;
-        for (let r = 0; r < GRID_SIZE; r++) {
-          for (let c = 0; c < GRID_SIZE; c++) {
-            if (canPlace(gridRef.current, dragging.piece, r, c)) {
-              const centerX =
-                rect.left +
-                8 +
-                (c + dragging.piece.cells[0].length / 2) * cellPx;
-              const centerY =
-                rect.top + 8 + (r + dragging.piece.cells.length / 2) * cellPx;
-              const dist = Math.hypot(cx - centerX, cy - centerY);
-              if (dist < bestDist) {
-                bestDist = dist;
-                snapTarget = { row: r, col: c };
-              }
-            }
-          }
-        }
-      }
-      setDragging((d) => (d ? { ...d, x: cx, y: cy, snapTarget } : null));
+      setDragging((d) => (d ? { ...d, x: cx, y: cy, snapTarget: null } : null));
       const cell = getCellFromPointer(cx, cy);
       setHoverCell(cell);
     };
     const onUp = (e: PointerEvent) => {
       if (dragging && gameState === "playing") {
-        // Use snapTarget if available
-        if (dragging.snapTarget) {
-          attemptPlace(
-            dragging.pieceIndex,
-            dragging.piece,
-            dragging.snapTarget.row,
-            dragging.snapTarget.col,
-          );
+        const cell = getCellFromPointer(e.clientX, e.clientY);
+        if (
+          cell &&
+          canPlace(gridRef.current, dragging.piece, cell.row, cell.col)
+        ) {
+          // Manual drop on valid cell
+          attemptPlace(dragging.pieceIndex, dragging.piece, cell.row, cell.col);
         } else {
-          // Fallback: offset search from cursor
-          const cell = getCellFromPointer(e.clientX, e.clientY);
-          if (cell) {
-            const offsets = [
-              [0, 0],
-              [0, 1],
-              [1, 0],
-              [0, -1],
-              [-1, 0],
-              [1, 1],
-              [1, -1],
-              [-1, 1],
-              [-1, -1],
-            ];
-            for (const [dr, dc] of offsets) {
-              const tr = cell.row + dr;
-              const tc = cell.col + dc;
-              if (canPlace(gridRef.current, dragging.piece, tr, tc)) {
-                attemptPlace(dragging.pieceIndex, dragging.piece, tr, tc);
-                break;
-              }
-            }
-          }
+          // Tap or invalid drop — auto-place at first valid spot
+          const spot = findFirstValidSpot(gridRef.current, dragging.piece);
+          if (spot)
+            attemptPlace(
+              dragging.pieceIndex,
+              dragging.piece,
+              spot.row,
+              spot.col,
+            );
         }
       }
       setDragging(null);
@@ -649,7 +620,7 @@ export default function App() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [dragging, gameState, getCellFromPointer, cellPx]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dragging, gameState, getCellFromPointer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const spawnSparkles = useCallback(
     (clearing: Set<string>) => {
@@ -727,7 +698,7 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      const placementPts = STEP_PTS[stepIndexRef.current % STEP_PTS.length];
+      const placementPts = Math.floor(Math.random() * 7) + 12;
       stepIndexRef.current += 1;
       setGrid((currentGrid) => {
         if (!canPlace(currentGrid, piece, row, col)) return currentGrid;
