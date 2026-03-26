@@ -10,7 +10,37 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface _SERVICE {}
+export type RequestStatus = { 'pending' : null } |
+  { 'paid' : null } |
+  { 'rejected' : null };
+export interface UpdateStatusInput { 'id' : bigint, 'status' : RequestStatus }
+export interface WithdrawalRequest {
+  'id' : bigint,
+  'status' : RequestStatus,
+  'fullName' : string,
+  'email' : string,
+  'address' : string,
+  'timestamp' : bigint,
+  'upiId' : string,
+  'contactNo' : string,
+  'pointsAmount' : bigint,
+  'qrCode' : [] | [Uint8Array],
+}
+export interface WithdrawalRequestInput {
+  'fullName' : string,
+  'email' : string,
+  'address' : string,
+  'upiId' : string,
+  'contactNo' : string,
+  'pointsAmount' : bigint,
+  'qrCode' : [] | [Uint8Array],
+}
+export interface _SERVICE {
+  'getAllWithdrawalRequests' : ActorMethod<[], Array<WithdrawalRequest>>,
+  'getWithdrawalRequest' : ActorMethod<[bigint], WithdrawalRequest>,
+  'submitWithdrawalRequest' : ActorMethod<[WithdrawalRequestInput], bigint>,
+  'updateRequestStatus' : ActorMethod<[UpdateStatusInput], undefined>,
+}
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
 export declare const idlFactory: IDL.InterfaceFactory;

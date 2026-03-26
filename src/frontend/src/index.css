@@ -11,395 +11,89 @@
 
 @layer base {
   :root {
-    --radius: 0.5rem;
-    --background: 0.12 0.06 290;
-    --foreground: 0.95 0.01 290;
-    --card: 0.15 0.07 290;
-    --card-foreground: 0.95 0.01 290;
-    --popover: 0.15 0.07 290;
-    --popover-foreground: 0.95 0.01 290;
-    --primary: 0.7 0.28 310;
-    --primary-foreground: 0.98 0 0;
-    --secondary: 0.2 0.07 290;
-    --secondary-foreground: 0.9 0.01 290;
-    --muted: 0.2 0.06 290;
-    --muted-foreground: 0.6 0.04 290;
-    --accent: 0.75 0.22 145;
-    --accent-foreground: 0.1 0.04 145;
-    --destructive: 0.65 0.25 25;
+    --radius: 0.625rem;
+    /* Deep midnight navy/gold dark theme */
+    --background: 0.11 0.04 270;
+    --foreground: 0.93 0.01 80;
+    --card: 0.15 0.05 265;
+    --card-foreground: 0.93 0.01 80;
+    --popover: 0.15 0.05 265;
+    --popover-foreground: 0.93 0.01 80;
+    --primary: 0.78 0.18 75;
+    --primary-foreground: 0.1 0.03 265;
+    --secondary: 0.2 0.05 265;
+    --secondary-foreground: 0.85 0.02 80;
+    --muted: 0.19 0.04 265;
+    --muted-foreground: 0.55 0.04 265;
+    --accent: 0.75 0.22 155;
+    --accent-foreground: 0.1 0.04 155;
+    --destructive: 0.62 0.24 25;
     --destructive-foreground: 0.98 0 0;
-    --border: 0.28 0.08 290;
-    --input: 0.25 0.07 290;
-    --ring: 0.7 0.28 310;
-    --chart-1: 0.65 0.25 264;
-    --chart-2: 0.7 0.22 145;
-    --chart-3: 0.85 0.22 85;
-    --chart-4: 0.65 0.28 315;
-    --chart-5: 0.65 0.28 25;
-    --sidebar: 0.15 0.07 290;
-    --sidebar-foreground: 0.95 0.01 290;
-    --sidebar-primary: 0.7 0.28 310;
-    --sidebar-primary-foreground: 0.98 0 0;
-    --sidebar-accent: 0.2 0.07 290;
-    --sidebar-accent-foreground: 0.9 0.01 290;
-    --sidebar-border: 0.28 0.08 290;
-    --sidebar-ring: 0.7 0.28 310;
+    --border: 0.25 0.06 265;
+    --input: 0.22 0.05 265;
+    --ring: 0.78 0.18 75;
+    --chart-1: 0.78 0.18 75;
+    --chart-2: 0.75 0.22 155;
+    --chart-3: 0.65 0.22 25;
+    --chart-4: 0.7 0.18 285;
+    --chart-5: 0.65 0.25 315;
+    --sidebar: 0.14 0.05 265;
+    --sidebar-foreground: 0.93 0.01 80;
+    --sidebar-primary: 0.78 0.18 75;
+    --sidebar-primary-foreground: 0.1 0.03 265;
+    --sidebar-accent: 0.2 0.05 265;
+    --sidebar-accent-foreground: 0.85 0.02 80;
+    --sidebar-border: 0.25 0.06 265;
+    --sidebar-ring: 0.78 0.18 75;
   }
 
   * {
     @apply border-border;
     box-sizing: border-box;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: "BricolageGrotesque", "Inter", system-ui, sans-serif;
     overflow-x: hidden;
-    background: linear-gradient(180deg, #3b1f6e 0%, #1a0a3d 40%, #0d0520 100%)
+    background: linear-gradient(160deg, #0d0a1f 0%, #1a1230 40%, #0a0d18 100%)
       fixed;
     min-height: 100vh;
   }
 }
 
-/* ─── Splash animations ─────────────────────────────────────────────────── */
-@keyframes splashWelcome {
-  0% {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.9);
+@layer components {
+  .btn-gold {
+    @apply bg-primary text-primary-foreground font-bold shadow-lg;
+    box-shadow: 0 0 16px oklch(var(--primary) / 0.35), 0 4px 12px
+      rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.2s, transform 0.1s;
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  .btn-gold:hover {
+    box-shadow: 0 0 28px oklch(var(--primary) / 0.55), 0 6px 18px
+      rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
   }
-}
-@keyframes splashUsers {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes splashDev {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes tapPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    box-shadow: 0 6px 0 #14532d, 0 8px 20px rgba(0, 0, 0, 0.4);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-3px) scale(1.04);
-    box-shadow: 0 9px 0 #14532d, 0 12px 28px rgba(0, 0, 0, 0.5);
-  }
-}
-@keyframes floatBlock {
-  0% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translateY(-18px) rotate(8deg);
-  }
-  66% {
-    transform: translateY(10px) rotate(-5deg);
-  }
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-}
-@keyframes splashBlockBounce {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-10px) scale(1.1);
-  }
-}
-@keyframes starSpin {
-  0% {
-    transform: rotate(0deg) scale(1);
-    opacity: 0.15;
-  }
-  50% {
-    transform: rotate(180deg) scale(1.2);
-    opacity: 0.3;
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
-    opacity: 0.15;
-  }
-}
-
-.splash-welcome {
-  animation: splashWelcome 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.splash-users {
-  animation: splashUsers 0.7s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.splash-dev {
-  animation: splashDev 0.6s 0.6s ease both;
-}
-.tap-to-play {
-  animation: tapPulse 1.4s ease-in-out infinite;
-}
-.float-block {
-  animation: floatBlock 3s ease-in-out infinite;
-}
-.splash-content {
-  animation: splashDev 0.4s ease forwards;
-}
-.star-bg {
-  animation: starSpin 8s linear infinite;
-}
-
-/* ─── Candy Drop cell placed ────────────────────────────────────────────── */
-@keyframes candyDrop {
-  0% {
-    transform: scale(0) translateY(-10px);
-    opacity: 0;
-  }
-  70% {
-    transform: scale(1.15) translateY(2px);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
-}
-.cell-placed {
-  animation: candyDrop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* ─── Candy Crush cell-clear animation ──────────────────────────────────── */
-@keyframes cellClearPhase1 {
-  0% {
-    transform: scale(1);
-    filter: brightness(1);
-    opacity: 1;
-  }
-  30% {
-    transform: scale(1.2);
-    filter: brightness(2) hue-rotate(60deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.2);
-    filter: brightness(3.5) hue-rotate(120deg);
-    opacity: 1;
-  }
-}
-@keyframes cellClearPhase2 {
-  0% {
-    transform: scale(1.2);
-    filter: brightness(3.5) saturate(2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    filter: brightness(5) saturate(3) hue-rotate(180deg);
-    opacity: 0;
-  }
-}
-.cell-clearing {
-  animation: cellClearPhase1 0.15s ease-out forwards, cellClearPhase2 0.22s
-    0.15s cubic-bezier(0.36, 0, 0.66, -0.2) forwards;
-  z-index: 2;
-  position: relative;
-}
-
-/* ─── Sparkle particle ──────────────────────────────────────────────────── */
-@keyframes sparkleShoot {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  60% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: var(--spark-tx, translate(30px, -30px)) scale(0);
-    opacity: 0;
-  }
-}
-.sparkle-particle {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  animation: sparkleShoot 0.5s ease-out forwards;
-  z-index: 20;
-}
-
-/* ─── Rainbow sweep line ────────────────────────────────────────────────── */
-@keyframes sweepRow {
-  0% {
-    left: 8px;
-    opacity: 1;
-  }
-  100% {
-    left: calc(100% - 8px);
-    opacity: 0;
-  }
-}
-@keyframes sweepCol {
-  0% {
-    top: 8px;
-    opacity: 1;
-  }
-  100% {
-    top: calc(100% - 8px);
-    opacity: 0;
-  }
-}
-.sweep-row {
-  position: absolute;
-  height: 4px;
-  width: var(--sweep-w, 100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    #ff2d55,
-    #ff9500,
-    #ffd60a,
-    #34c759,
-    #007aff,
-    #bf5af2,
-    transparent
-  );
-  box-shadow: 0 0 10px #fff, 0 0 20px #ff9500;
-  pointer-events: none;
-  animation: sweepRow 0.15s linear forwards;
-  z-index: 15;
-  border-radius: 2px;
-}
-.sweep-col {
-  position: absolute;
-  width: 4px;
-  height: var(--sweep-h, 100%);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    #ff2d55,
-    #ff9500,
-    #ffd60a,
-    #34c759,
-    #007aff,
-    #bf5af2,
-    transparent
-  );
-  box-shadow: 0 0 10px #fff, 0 0 20px #ff9500;
-  pointer-events: none;
-  animation: sweepCol 0.15s linear forwards;
-  z-index: 15;
-  border-radius: 2px;
-}
-
-/* ─── Score popup ───────────────────────────────────────────────────────── */
-@keyframes scorePopup {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-50px) scale(1.4);
-  }
-}
-.score-popup {
-  animation: scorePopup 0.9s ease-out forwards;
-}
-
-/* ─── Game over overlay ─────────────────────────────────────────────────── */
-@keyframes gameOverFade {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-.game-over-overlay {
-  animation: gameOverFade 0.4s ease-out forwards;
-}
-
-/* ─── Win celebration ───────────────────────────────────────────────────── */
-@keyframes winCelebration {
-  0% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-  20% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-  80% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-.win-celebration > div {
-  animation: winCelebration 3s ease forwards;
-}
-
-/* ─── Queue piece float ──────────────────────────────────────────────────── */
-@keyframes pieceFloat {
-  0%,
-  100% {
+  .btn-gold:active {
     transform: translateY(0);
   }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-.piece-float {
-  animation: pieceFloat 2s ease-in-out infinite;
-}
 
-/* ─── Valid hover pulse ─────────────────────────────────────────────────── */
-@keyframes validPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 8px #34c75988, inset 0 0 4px #34c75944;
+  .card-dark {
+    @apply bg-card border border-border;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 0
+      oklch(var(--primary) / 0.1) inset;
   }
-  50% {
-    box-shadow: 0 0 16px #34c759cc, inset 0 0 8px #34c75988;
-  }
-}
-.hover-valid {
-  animation: validPulse 0.8s ease-in-out infinite;
-}
 
-@keyframes snapPulse {
-  from {
-    box-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
-    opacity: 0.7;
+  .input-dark {
+    @apply bg-input border-border text-foreground placeholder:text-muted-foreground;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  to {
-    box-shadow: 0 0 16px currentColor, 0 0 32px currentColor;
-    opacity: 1;
+  .input-dark:focus {
+    border-color: oklch(var(--primary) / 0.7);
+    box-shadow: 0 0 0 2px oklch(var(--primary) / 0.2);
   }
-}
 
-.snap-target {
-  animation: snapPulse 0.5s ease-in-out infinite alternate;
-}
-
-/* Prevent text selection during drag */
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
+  .text-gold {
+    color: oklch(var(--primary));
+  }
 }

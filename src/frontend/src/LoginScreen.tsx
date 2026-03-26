@@ -23,6 +23,11 @@ export default function LoginScreen({ onLogin }: Props) {
   const [signupError, setSignupError] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
 
+  // Show/hide password toggles
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirm, setShowSignupConfirm] = useState(false);
+
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -127,6 +132,19 @@ export default function LoginScreen({ onLogin }: Props) {
     background: "rgba(255,255,255,0.07)",
     border: "1.5px solid rgba(167,139,250,0.4)",
     borderRadius: 12,
+    padding: "10px 42px 10px 14px",
+    color: "white",
+    fontSize: "0.9rem",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border-color 0.2s",
+  };
+
+  const inputNoToggleStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.07)",
+    border: "1.5px solid rgba(167,139,250,0.4)",
+    borderRadius: 12,
     padding: "10px 14px",
     color: "white",
     fontSize: "0.9rem",
@@ -142,6 +160,22 @@ export default function LoginScreen({ onLogin }: Props) {
     letterSpacing: "0.12em",
     display: "block",
     marginBottom: 4,
+  };
+
+  const eyeButtonStyle: React.CSSProperties = {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "transparent",
+    border: "none",
+    color: "rgba(255,255,255,0.6)",
+    cursor: "pointer",
+    fontSize: "1rem",
+    padding: "4px",
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
   };
 
   return (
@@ -316,7 +350,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
                 placeholder="Enter username"
-                style={inputStyle}
+                style={inputNoToggleStyle}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 autoComplete="username"
               />
@@ -325,17 +359,30 @@ export default function LoginScreen({ onLogin }: Props) {
               <label htmlFor="login-password" style={labelStyle}>
                 Password
               </label>
-              <input
-                id="login-password"
-                data-ocid="auth.input"
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="Enter password"
-                style={inputStyle}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                autoComplete="current-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  id="login-password"
+                  data-ocid="auth.input"
+                  type={showLoginPassword ? "text" : "password"}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter password"
+                  style={inputStyle}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword((v) => !v)}
+                  style={eyeButtonStyle}
+                  tabIndex={-1}
+                  aria-label={
+                    showLoginPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showLoginPassword ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             {lockoutSeconds > 0 && (
@@ -414,7 +461,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={signupUsername}
                 onChange={(e) => setSignupUsername(e.target.value)}
                 placeholder="Choose a username"
-                style={inputStyle}
+                style={inputNoToggleStyle}
                 autoComplete="username"
               />
             </div>
@@ -429,7 +476,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={signupEmail}
                 onChange={(e) => setSignupEmail(e.target.value)}
                 placeholder="your@email.com"
-                style={inputStyle}
+                style={inputNoToggleStyle}
                 autoComplete="email"
               />
             </div>
@@ -437,16 +484,29 @@ export default function LoginScreen({ onLogin }: Props) {
               <label htmlFor="signup-password" style={labelStyle}>
                 Password
               </label>
-              <input
-                id="signup-password"
-                data-ocid="auth.input"
-                type="password"
-                value={signupPassword}
-                onChange={(e) => setSignupPassword(e.target.value)}
-                placeholder="Create a strong password"
-                style={inputStyle}
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  id="signup-password"
+                  data-ocid="auth.input"
+                  type={showSignupPassword ? "text" : "password"}
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="Create a strong password"
+                  style={inputStyle}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPassword((v) => !v)}
+                  style={eyeButtonStyle}
+                  tabIndex={-1}
+                  aria-label={
+                    showSignupPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showSignupPassword ? "🙈" : "👁"}
+                </button>
+              </div>
               {signupPassword && (
                 <div style={{ marginTop: 6 }}>
                   <div
@@ -485,16 +545,29 @@ export default function LoginScreen({ onLogin }: Props) {
               <label htmlFor="signup-confirm" style={labelStyle}>
                 Confirm Password
               </label>
-              <input
-                id="signup-confirm"
-                data-ocid="auth.input"
-                type="password"
-                value={signupConfirm}
-                onChange={(e) => setSignupConfirm(e.target.value)}
-                placeholder="Repeat password"
-                style={inputStyle}
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  id="signup-confirm"
+                  data-ocid="auth.input"
+                  type={showSignupConfirm ? "text" : "password"}
+                  value={signupConfirm}
+                  onChange={(e) => setSignupConfirm(e.target.value)}
+                  placeholder="Repeat password"
+                  style={inputStyle}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupConfirm((v) => !v)}
+                  style={eyeButtonStyle}
+                  tabIndex={-1}
+                  aria-label={
+                    showSignupConfirm ? "Hide password" : "Show password"
+                  }
+                >
+                  {showSignupConfirm ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             {signupError && (

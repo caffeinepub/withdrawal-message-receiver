@@ -8,10 +8,100 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const idlService = IDL.Service({});
+export const RequestStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'paid' : IDL.Null,
+  'rejected' : IDL.Null,
+});
+export const WithdrawalRequest = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : RequestStatus,
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+  'address' : IDL.Text,
+  'timestamp' : IDL.Int,
+  'upiId' : IDL.Text,
+  'contactNo' : IDL.Text,
+  'pointsAmount' : IDL.Nat,
+  'qrCode' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+});
+export const WithdrawalRequestInput = IDL.Record({
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+  'address' : IDL.Text,
+  'upiId' : IDL.Text,
+  'contactNo' : IDL.Text,
+  'pointsAmount' : IDL.Nat,
+  'qrCode' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+});
+export const UpdateStatusInput = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : RequestStatus,
+});
+
+export const idlService = IDL.Service({
+  'getAllWithdrawalRequests' : IDL.Func(
+      [],
+      [IDL.Vec(WithdrawalRequest)],
+      ['query'],
+    ),
+  'getWithdrawalRequest' : IDL.Func([IDL.Nat], [WithdrawalRequest], ['query']),
+  'submitWithdrawalRequest' : IDL.Func([WithdrawalRequestInput], [IDL.Nat], []),
+  'updateRequestStatus' : IDL.Func([UpdateStatusInput], [], []),
+});
 
 export const idlInitArgs = [];
 
-export const idlFactory = ({ IDL }) => { return IDL.Service({}); };
+export const idlFactory = ({ IDL }) => {
+  const RequestStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'paid' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
+  const WithdrawalRequest = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : RequestStatus,
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+    'address' : IDL.Text,
+    'timestamp' : IDL.Int,
+    'upiId' : IDL.Text,
+    'contactNo' : IDL.Text,
+    'pointsAmount' : IDL.Nat,
+    'qrCode' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+  });
+  const WithdrawalRequestInput = IDL.Record({
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+    'address' : IDL.Text,
+    'upiId' : IDL.Text,
+    'contactNo' : IDL.Text,
+    'pointsAmount' : IDL.Nat,
+    'qrCode' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+  });
+  const UpdateStatusInput = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : RequestStatus,
+  });
+  
+  return IDL.Service({
+    'getAllWithdrawalRequests' : IDL.Func(
+        [],
+        [IDL.Vec(WithdrawalRequest)],
+        ['query'],
+      ),
+    'getWithdrawalRequest' : IDL.Func(
+        [IDL.Nat],
+        [WithdrawalRequest],
+        ['query'],
+      ),
+    'submitWithdrawalRequest' : IDL.Func(
+        [WithdrawalRequestInput],
+        [IDL.Nat],
+        [],
+      ),
+    'updateRequestStatus' : IDL.Func([UpdateStatusInput], [], []),
+  });
+};
 
 export const init = ({ IDL }) => { return []; };
