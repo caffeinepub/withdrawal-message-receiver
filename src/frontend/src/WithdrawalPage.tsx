@@ -1066,15 +1066,7 @@ export default function WithdrawalPage({
           textAlign: "center",
         }}
       >
-        © {new Date().getFullYear()}. Built with love using{" "}
-        <a
-          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: "rgba(255,255,255,0.3)" }}
-        >
-          caffeine.ai
-        </a>
+        2026. This game built for entertainment and earning purpose ❤️🤑
       </p>
     </div>
   );

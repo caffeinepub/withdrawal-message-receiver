@@ -220,7 +220,7 @@ function makeEmptyGrid(): Grid {
 function randomPiece(): Shape {
   return SHAPES[Math.floor(Math.random() * SHAPES.length)];
 }
-function randomQueue(): [Shape, Shape, Shape] {
+function randomQueue(): [Shape | null, Shape | null, Shape | null] {
   return [randomPiece(), randomPiece(), randomPiece()];
 }
 function canPlace(grid: Grid, piece: Shape, row: number, col: number): boolean {
@@ -465,8 +465,11 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [grid, setGrid] = useState<Grid>(makeEmptyGrid());
-  const [queue, setQueue] = useState<[Shape, Shape, Shape]>(randomQueue());
+  const [queue, setQueue] = useState<
+    [Shape | null, Shape | null, Shape | null]
+  >(randomQueue());
   const [score, setScore] = useState(0);
+  const scoreRef = useRef(0);
   const [highScore, setHighScore] = useState(0);
   const [totalRupees, setTotalRupees] = useState(0);
   const [clearingCells, setClearingCells] = useState<Set<string>>(new Set());
@@ -684,7 +687,11 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      const placementPts = Math.floor(Math.random() * 7) + 12;
+      // Score-based earning: points increase as score grows
+      const scoreTier = Math.floor(scoreRef.current / 100);
+      const baseMin = Math.min(12 + scoreTier * 2, 40);
+      const baseRange = Math.min(7 + scoreTier, 20);
+      const placementPts = Math.floor(Math.random() * baseRange) + baseMin;
       stepIndexRef.current += 1;
       setGrid((currentGrid) => {
         if (!canPlace(currentGrid, piece, row, col)) return currentGrid;
@@ -715,10 +722,17 @@ export default function App() {
             const cleared = clearLines(placed, rows, cols);
             setClearingCells(new Set());
             setQueue((currentQueue) => {
-              const newQueue = [...currentQueue] as [Shape, Shape, Shape];
-              newQueue[pieceIndex] = randomPiece();
+              let newQueue = [...currentQueue] as [
+                Shape | null,
+                Shape | null,
+                Shape | null,
+              ];
+              newQueue[pieceIndex] = null;
+              const allUsed = newQueue.every((p) => p === null);
+              if (allUsed) newQueue = randomQueue();
+              const gridForCheck = allUsed ? cleared : cleared;
               const isOver = newQueue.every(
-                (p) => !hasAnyValidPlacement(cleared, p),
+                (p) => p === null || !hasAnyValidPlacement(gridForCheck, p),
               );
               if (isOver) {
                 setGameState("gameover");
@@ -751,6 +765,7 @@ export default function App() {
         showPlacementPopup(placementPts, row, col, piece.color);
         setScore((s) => {
           const ns = s + placementPts;
+          scoreRef.current = ns;
           setHighScore((h) => {
             const nh = Math.max(h, ns);
             return nh;
@@ -759,10 +774,16 @@ export default function App() {
           return ns;
         });
         setQueue((currentQueue) => {
-          const newQueue = [...currentQueue] as [Shape, Shape, Shape];
-          newQueue[pieceIndex] = randomPiece();
+          let newQueue = [...currentQueue] as [
+            Shape | null,
+            Shape | null,
+            Shape | null,
+          ];
+          newQueue[pieceIndex] = null;
+          const allUsed = newQueue.every((p) => p === null);
+          if (allUsed) newQueue = randomQueue();
           const isOver = newQueue.every(
-            (p) => !hasAnyValidPlacement(placed, p),
+            (p) => p === null || !hasAnyValidPlacement(placed, p),
           );
           if (isOver) {
             setGameState("gameover");
@@ -811,35 +832,7 @@ export default function App() {
     }, 1500);
   };
 
-  const hoverPlacement =
-    hoverCell && dragging
-      ? {
-          valid: canPlace(grid, dragging.piece, hoverCell.row, hoverCell.col),
-          cells: (() => {
-            const s = new Set<string>();
-            if (!hoverCell || !dragging) return s;
-            for (let r = 0; r < dragging.piece.cells.length; r++)
-              for (let c = 0; c < dragging.piece.cells[r].length; c++)
-                if (dragging.piece.cells[r][c] === 1)
-                  s.add(`${hoverCell.row + r},${hoverCell.col + c}`);
-            return s;
-          })(),
-        }
-      : null;
-
-  const snapPlacement = dragging?.snapTarget
-    ? (() => {
-        const s = new Set<string>();
-        const { row, col } = dragging.snapTarget;
-        for (let r = 0; r < dragging.piece.cells.length; r++)
-          for (let c = 0; c < dragging.piece.cells[r].length; c++)
-            if (dragging.piece.cells[r][c] === 1)
-              s.add(`${row + r},${col + c}`);
-        return s;
-      })()
-    : null;
-
-  const currentYear = new Date().getFullYear();
+  // currentYear removed
   const queueSlotKeys = ["slot-0", "slot-1", "slot-2"] as const;
   const dismissSplash = () => setGameState("auth");
 
@@ -864,7 +857,9 @@ export default function App() {
       if (user) {
         saveUsers(
           users.map((u) =>
-            u.username === currentUser ? { ...u, currentScore: score } : u,
+            u.username === currentUser
+              ? { ...u, currentScore: score, rupees: totalRupees }
+              : u,
           ),
         );
       }
@@ -1157,13 +1152,20 @@ export default function App() {
         totalRupees={totalRupees}
         onBack={() => setView("game")}
         onWithdraw={(amount) => {
-          setTotalRupees((r) => Math.max(0, r - amount));
+          const newRupees = Math.max(0, totalRupees - amount);
+          setTotalRupees(newRupees);
           if (currentUser) {
-            updateUserHighScore(
-              currentUser,
-              score,
-              Math.max(0, totalRupees - amount),
-            );
+            const users = getUsers();
+            const idx = users.findIndex((u) => u.username === currentUser);
+            if (idx !== -1) {
+              users[idx] = {
+                ...users[idx],
+                rupees: newRupees,
+                highScore: Math.max(users[idx].highScore, score),
+                currentScore: score,
+              };
+              saveUsers(users);
+            }
           }
         }}
       />
@@ -1437,70 +1439,9 @@ export default function App() {
                     const cellColor = grid[row][col];
                     const isClearing = clearingCells.has(key);
                     const isPlaced = placedCells.has(key);
-                    const isHovered = hoverPlacement?.cells.has(key);
-                    const isValidHover = hoverPlacement?.valid;
-                    const isSnap = !isHovered && snapPlacement?.has(key);
-
                     let extraClass = "";
                     if (isClearing) extraClass = "cell-clearing";
                     else if (isPlaced && cellColor) extraClass = "cell-placed";
-                    if (isHovered && isValidHover) extraClass += " hover-valid";
-                    if (isSnap) extraClass += " snap-target";
-
-                    if (isSnap) {
-                      return (
-                        <div
-                          key={key}
-                          className={extraClass}
-                          style={{
-                            width: cellPx - 2,
-                            height: cellPx - 2,
-                            borderRadius: 6,
-                            background: `linear-gradient(145deg, ${dragging?.piece.color}55, ${dragging?.piece.color}33)`,
-                            border: `2px solid ${dragging?.piece.color}`,
-                            boxShadow: `0 0 12px ${dragging?.piece.color}aa, 0 0 24px ${dragging?.piece.color}55`,
-                            opacity: 0.85,
-                            animation:
-                              "snapPulse 0.7s ease-in-out infinite alternate",
-                            position: "relative",
-                          }}
-                        />
-                      );
-                    }
-
-                    if (isHovered) {
-                      const hoverColor = isValidHover ? "#34C759" : "#FF2D55";
-                      const hoverLight = isValidHover ? "#6DDD8C" : "#FF6B8A";
-                      const hoverDark = isValidHover ? "#1A7A35" : "#CC0033";
-                      return (
-                        <div
-                          key={key}
-                          className={extraClass}
-                          style={{
-                            width: cellPx - 2,
-                            height: cellPx - 2,
-                            borderRadius: 6,
-                            background: `linear-gradient(145deg, ${hoverLight} 0%, ${hoverColor} 50%, ${hoverDark} 100%)`,
-                            border: `2px solid ${hoverLight}`,
-                            boxShadow: `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px ${hoverColor}88`,
-                            opacity: 0.8,
-                            position: "relative",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              borderRadius: 6,
-                              background:
-                                "radial-gradient(ellipse at 40% 25%, rgba(255,255,255,0.55) 0%, transparent 65%)",
-                              pointerEvents: "none",
-                            }}
-                          />
-                        </div>
-                      );
-                    }
 
                     if (cellColor) {
                       const light = lightenColor(cellColor);
@@ -1820,20 +1761,25 @@ export default function App() {
                   <div
                     key={queueSlotKeys[idx]}
                     data-ocid={`queue.item.${idx + 1}`}
-                    className="piece-float"
+                    className={piece ? "piece-float" : ""}
                     style={{
                       touchAction: "none",
-                      opacity: dragging?.pieceIndex === idx ? 0.3 : 1,
+                      opacity: piece
+                        ? dragging?.pieceIndex === idx
+                          ? 0.3
+                          : 1
+                        : 0.2,
                       transition: "opacity 0.15s",
-                      cursor: "grab",
+                      cursor: piece ? "grab" : "default",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       flex: 1,
                       animationDelay: `${idx * 0.3}s`,
+                      minHeight: 60,
                     }}
                     onPointerDown={(e) => {
-                      if (gameState !== "playing") return;
+                      if (!piece || gameState !== "playing") return;
                       e.preventDefault();
                       (e.target as Element).setPointerCapture(e.pointerId);
                       setDragging({
@@ -1844,7 +1790,19 @@ export default function App() {
                       });
                     }}
                   >
-                    <PiecePreview piece={piece} cellSize={cellPreviewPx} />
+                    {piece ? (
+                      <PiecePreview piece={piece} cellSize={cellPreviewPx} />
+                    ) : (
+                      <div
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 8,
+                          border: "2px dashed rgba(255,255,255,0.2)",
+                          background: "rgba(255,255,255,0.04)",
+                        }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -1909,26 +1867,52 @@ export default function App() {
           </main>
 
           {/* Floating ghost piece while dragging */}
-          {dragging && (
-            <div
-              style={{
-                position: "fixed",
-                left:
-                  dragging.x - (dragging.piece.cells[0].length * cellPx) / 2,
-                top: dragging.y - (dragging.piece.cells.length * cellPx) / 2,
-                pointerEvents: "none",
-                zIndex: 1000,
-                opacity: 0.9,
-                filter: `drop-shadow(0 0 15px ${dragging.piece.color}) drop-shadow(0 0 30px ${dragging.piece.color}88)`,
-              }}
-            >
-              <PiecePreview
-                piece={dragging.piece}
-                cellSize={cellPx - 2}
-                ghost
-              />
-            </div>
-          )}
+          {dragging &&
+            (() => {
+              const isValid = hoverCell
+                ? canPlace(
+                    gridRef.current,
+                    dragging.piece,
+                    hoverCell.row,
+                    hoverCell.col,
+                  )
+                : null;
+              const indicatorColor =
+                isValid === true
+                  ? "#00ff88"
+                  : isValid === false
+                    ? "#ff3333"
+                    : null;
+              return (
+                <div
+                  style={{
+                    position: "fixed",
+                    left:
+                      dragging.x -
+                      (dragging.piece.cells[0].length * cellPx) / 2,
+                    top:
+                      dragging.y - (dragging.piece.cells.length * cellPx) / 2,
+                    pointerEvents: "none",
+                    zIndex: 1000,
+                    opacity: 0.9,
+                    filter: indicatorColor
+                      ? `drop-shadow(0 0 8px ${indicatorColor}) drop-shadow(0 0 20px ${indicatorColor}88)`
+                      : `drop-shadow(0 0 15px ${dragging.piece.color}) drop-shadow(0 0 30px ${dragging.piece.color}88)`,
+                    outline: indicatorColor
+                      ? `3px solid ${indicatorColor}`
+                      : "none",
+                    outlineOffset: "2px",
+                    borderRadius: 4,
+                  }}
+                >
+                  <PiecePreview
+                    piece={dragging.piece}
+                    cellSize={cellPx - 2}
+                    ghost
+                  />
+                </div>
+              );
+            })()}
 
           {/* Score popups */}
           {scorePopups.map((popup) => (
@@ -2019,16 +2003,7 @@ export default function App() {
             >
               Developed by ADARSH CHAUDHARY
             </span>
-            <span style={{ margin: "0 6px", opacity: 0.3 }}>·</span>©{" "}
-            {currentYear} Built with ❤️ using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "rgba(147,51,234,0.7)" }}
-            >
-              caffeine.ai
-            </a>
+            2026. This game built for entertainment and earning purpose ❤️🤑
           </footer>
 
           {/* Fixed Bottom Bar */}

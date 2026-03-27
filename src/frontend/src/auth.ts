@@ -40,7 +40,7 @@ export async function hashPassword(password: string): Promise<string> {
 export function checkPasswordStrength(
   password: string,
 ): "weak" | "medium" | "strong" {
-  if (password.length < 8) return "weak";
+  if (password.length < 6) return "weak";
   const hasUpper = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecial = /[^A-Za-z0-9]/.test(password);
@@ -94,7 +94,7 @@ export async function registerUser(
   }
   const strength = checkPasswordStrength(password);
   if (strength === "weak") {
-    return { success: false, error: "Password is too weak (min 8 characters)" };
+    return { success: false, error: "Password is too weak (min 6 characters)" };
   }
   const passwordHash = await hashPassword(password);
   const newUser: User = {
