@@ -476,10 +476,6 @@ export default function App() {
   const [placedCells, setPlacedCells] = useState<Set<string>>(new Set());
   const [scorePopups, setScorePopups] = useState<ScorePopup[]>([]);
   const [dragging, setDragging] = useState<DragState | null>(null);
-  const [hoverCell, setHoverCell] = useState<{
-    row: number;
-    col: number;
-  } | null>(null);
   const [cellPx, setCellPx] = useState(calcCellPx);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
@@ -585,8 +581,6 @@ export default function App() {
       const cx = e.clientX;
       const cy = e.clientY;
       setDragging((d) => (d ? { ...d, x: cx, y: cy, snapTarget: null } : null));
-      const cell = getCellFromPointer(cx, cy);
-      setHoverCell(cell);
     };
     const onUp = (e: PointerEvent) => {
       if (dragging && gameState === "playing") {
@@ -601,7 +595,6 @@ export default function App() {
         // Invalid drop: block simply returns to tray
       }
       setDragging(null);
-      setHoverCell(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -827,7 +820,6 @@ export default function App() {
       setSparkles([]);
       setSweepLines([]);
       setDragging(null);
-      setHoverCell(null);
       setGameState("playing");
     }, 1500);
   };
@@ -1867,52 +1859,27 @@ export default function App() {
           </main>
 
           {/* Floating ghost piece while dragging */}
-          {dragging &&
-            (() => {
-              const isValid = hoverCell
-                ? canPlace(
-                    gridRef.current,
-                    dragging.piece,
-                    hoverCell.row,
-                    hoverCell.col,
-                  )
-                : null;
-              const indicatorColor =
-                isValid === true
-                  ? "#00ff88"
-                  : isValid === false
-                    ? "#ff3333"
-                    : null;
-              return (
-                <div
-                  style={{
-                    position: "fixed",
-                    left:
-                      dragging.x -
-                      (dragging.piece.cells[0].length * cellPx) / 2,
-                    top:
-                      dragging.y - (dragging.piece.cells.length * cellPx) / 2,
-                    pointerEvents: "none",
-                    zIndex: 1000,
-                    opacity: 0.9,
-                    filter: indicatorColor
-                      ? `drop-shadow(0 0 8px ${indicatorColor}) drop-shadow(0 0 20px ${indicatorColor}88)`
-                      : `drop-shadow(0 0 15px ${dragging.piece.color}) drop-shadow(0 0 30px ${dragging.piece.color}88)`,
-                    outline: indicatorColor
-                      ? `3px solid ${indicatorColor}`
-                      : "none",
-                    outlineOffset: "2px",
-                    borderRadius: 4,
-                  }}
-                >
-                  <PiecePreview
-                    piece={dragging.piece}
-                    cellSize={cellPx - 2}
-                    ghost
-                  />
-                </div>
-              );
-            })()}
+          {dragging && (
+            <div
+              style={{
+                position: "fixed",
+                left:
+                  dragging.x - (dragging.piece.cells[0].length * cellPx) / 2,
+                top: dragging.y - (dragging.piece.cells.length * cellPx) / 2,
+                pointerEvents: "none",
+                zIndex: 1000,
+                opacity: 0.9,
+                filter: `drop-shadow(0 0 15px ${dragging.piece.color}) drop-shadow(0 0 30px ${dragging.piece.color}88)`,
+                borderRadius: 4,
+              }}
+            >
+              <PiecePreview
+                piece={dragging.piece}
+                cellSize={cellPx - 2}
+                ghost
+              />
+            </div>
+          )}
 
           {/* Score popups */}
           {scorePopups.map((popup) => (
