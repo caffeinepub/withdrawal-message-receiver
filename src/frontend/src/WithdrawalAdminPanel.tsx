@@ -322,10 +322,6 @@ export default function WithdrawalAdminPanel({
                   <div style={labelStyle}>Email</div>
                   <div style={valueStyle}>{req.email || "—"}</div>
                 </div>
-                <div style={fieldStyle}>
-                  <div style={labelStyle}>Phone</div>
-                  <div style={valueStyle}>{req.phone || "—"}</div>
-                </div>
               </div>
 
               {req.address && (
@@ -336,6 +332,11 @@ export default function WithdrawalAdminPanel({
                   </div>
                 </div>
               )}
+
+              <div>
+                <div style={labelStyle}>Phone</div>
+                <div style={valueStyle}>{req.phone || "—"}</div>
+              </div>
 
               {/* Amount */}
               <div
