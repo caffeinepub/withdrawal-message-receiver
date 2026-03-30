@@ -10,15 +10,15 @@ interface SpinWheelPageProps {
 
 const PRIZES = [
   {
-    label: "2 pts",
-    points: 2,
+    label: "40 pts",
+    points: 40,
     probability: 0.15,
     color: "#FF9500",
     emoji: "🟠",
   },
   {
-    label: "5 pts",
-    points: 5,
+    label: "60 pts",
+    points: 60,
     probability: 0.25,
     color: "#007AFF",
     emoji: "🔵",
@@ -31,15 +31,15 @@ const PRIZES = [
     emoji: "🟢",
   },
   {
-    label: "45 pts",
-    points: 45,
+    label: "120 pts",
+    points: 120,
     probability: 0.25,
     color: "#FFD60A",
     emoji: "🟡",
   },
   {
-    label: "80 pts",
-    points: 80,
+    label: "100 pts",
+    points: 100,
     probability: 0.05,
     color: "#FF2D55",
     emoji: "🔴",
@@ -198,11 +198,18 @@ export default function SpinWheelPage({
     const prizeIndex = weightedRandom();
     const prize = PRIZES[prizeIndex];
     const duration = 3000 + Math.random() * 2000;
+
+    // Pointer is at the TOP of canvas = angle -Math.PI/2 in canvas coords.
+    // For prize[prizeIndex] midpoint to land under the pointer:
+    //   finalAngle + prizeIndex * segmentAngle + segmentAngle/2 = -Math.PI/2 (mod 2π)
+    //   => finalAngle = -Math.PI/2 - prizeIndex * segmentAngle - segmentAngle/2
+    // Adding full rotations (5-9) to make a nice spin:
     const totalRotation =
-      Math.PI * 2 * (5 + Math.floor(Math.random() * 5)) +
-      (PRIZES.length - prizeIndex) * segmentAngle -
+      Math.PI * 2 * (5 + Math.floor(Math.random() * 5)) -
+      Math.PI / 2 -
+      prizeIndex * segmentAngle -
       segmentAngle / 2 -
-      (currentAngle % (Math.PI * 2));
+      (currentAngleRef.current % (Math.PI * 2));
 
     const startAngle = currentAngleRef.current;
     const startTime = performance.now();

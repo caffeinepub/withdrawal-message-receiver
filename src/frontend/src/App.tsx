@@ -174,6 +174,15 @@ const SHAPES = [
     color: C[5],
   },
   { name: "D2", cells: [[1, 1]], color: C[7] },
+  { name: "I1", cells: [[1]], color: C[2] },
+  {
+    name: "DIAG_UR",
+    cells: [
+      [0, 1],
+      [1, 0],
+    ],
+    color: C[6],
+  },
 ] as const;
 
 type Shape = (typeof SHAPES)[number];
