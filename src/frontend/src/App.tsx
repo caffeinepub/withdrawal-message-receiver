@@ -2325,35 +2325,43 @@ export default function App() {
               aria-label="Open spin wheel"
               style={{
                 position: "absolute",
-                right: 12,
-                bottom: 10,
-                width: 66,
-                height: 66,
+                right: 8,
+                bottom: 6,
+                width: 72,
+                height: 72,
                 borderRadius: "50%",
-                background:
-                  "linear-gradient(135deg, #b45309 0%, #d97706 35%, #fbbf24 60%, #f59e0b 80%, #92400e 100%)",
-                border: "3px solid #fde68a",
-                boxShadow:
-                  "0 0 18px rgba(251,191,36,0.8), 0 0 36px rgba(251,191,36,0.4), inset 0 1px 0 rgba(255,255,255,0.3)",
+                background: "transparent",
+                border: "none",
+                boxShadow: "0 0 18px rgba(251,191,36,0.6)",
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 1,
+                gap: 0,
                 padding: 0,
                 zIndex: 10,
               }}
             >
-              <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>🎰</span>
+              <img
+                src="/assets/spin-wheel-logo.png"
+                alt="Spin"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  display: "block",
+                }}
+              />
               <span
                 style={{
-                  fontSize: "0.45rem",
+                  fontSize: "0.42rem",
                   fontWeight: 900,
-                  color: "#fff",
+                  color: "#fbbf24",
                   letterSpacing: "0.05em",
-                  lineHeight: 1.1,
-                  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                  lineHeight: 1.2,
+                  textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                  marginTop: 1,
                 }}
               >
                 {spinTickets}🎟️
