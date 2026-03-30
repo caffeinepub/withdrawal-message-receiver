@@ -5,7 +5,7 @@ interface Props {
   onBack: () => void;
 }
 
-const RATE = 0.005; // ₹ per point
+const RATE = 5 / 3000; // ₹ per point (3000 pts = ₹5)
 const MIN_POINTS = 3000;
 const MAX_POINTS = 120000;
 const STEP = 100;
@@ -180,53 +180,77 @@ export default function PointsConverterPage({ totalRupees, onBack }: Props) {
           >
             💰 POINTS CALCULATOR
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <input
-              data-ocid="points_converter.input"
-              type="number"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Enter points..."
-              style={{
-                flex: 1,
-                background: "rgba(255,255,255,0.08)",
-                border: "2px solid #7c3aed",
-                borderRadius: 10,
-                padding: "12px 16px",
-                color: "white",
-                fontSize: "1.1rem",
-                fontWeight: 700,
-                outline: "none",
-              }}
-            />
-            <div style={{ fontSize: "1.4rem", color: "#fbbf24" }}>→</div>
+
+          {/* Input row — full width */}
+          <input
+            data-ocid="points_converter.input"
+            type="number"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Enter points..."
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "rgba(255,255,255,0.08)",
+              border: "2px solid #7c3aed",
+              borderRadius: 10,
+              padding: "12px 16px",
+              color: "white",
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              outline: "none",
+            }}
+          />
+
+          {/* Result box — prominent, below input */}
+          <div
+            style={{
+              marginTop: 14,
+              background: "rgba(251,191,36,0.08)",
+              border:
+                calcResult !== null
+                  ? "3px solid #fbbf24"
+                  : "3px solid rgba(251,191,36,0.35)",
+              borderRadius: 14,
+              padding: "18px 16px",
+              textAlign: "center",
+              boxShadow:
+                calcResult !== null
+                  ? "0 0 28px rgba(251,191,36,0.55), 0 0 8px rgba(251,191,36,0.3) inset"
+                  : "none",
+              transition: "box-shadow 0.2s, border-color 0.2s",
+            }}
+          >
             <div
               style={{
-                flex: 1,
-                background: "rgba(251,191,36,0.1)",
-                border:
-                  calcResult !== null
-                    ? "2px solid #fbbf24"
-                    : "2px solid #fbbf24",
-                borderRadius: 10,
-                padding: "12px 16px",
-                color: "#FCD34D",
-                fontSize: "1.1rem",
-                fontWeight: 900,
-                textAlign: "center",
-                textShadow:
-                  calcResult !== null
-                    ? "0 0 16px #FCD34DCC"
-                    : "0 0 10px #FCD34D88",
-                boxShadow:
-                  calcResult !== null
-                    ? "0 0 20px rgba(251,191,36,0.4)"
-                    : "none",
+                fontSize: "0.65rem",
+                color: "#fde68a",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                marginBottom: 6,
+                fontWeight: 700,
               }}
             >
-              {calcResult !== null ? `₹${calcResult.toFixed(2)}` : "—"}
+              Rupee Value
+            </div>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontWeight: 900,
+                color: "#FCD34D",
+                textShadow:
+                  calcResult !== null
+                    ? "0 0 24px #FCD34DCC, 0 0 8px #FCD34D88"
+                    : "0 0 8px #FCD34D44",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {calcResult !== null
+                ? `₹${calcResult.toFixed(2)}`
+                : "Enter points above"}
             </div>
           </div>
+
           <div
             style={{
               fontSize: "0.7rem",
@@ -235,7 +259,7 @@ export default function PointsConverterPage({ totalRupees, onBack }: Props) {
               textAlign: "center",
             }}
           >
-            Rate: 100 points = ₹0.50
+            Rate: 3,000 points = ₹5
           </div>
         </div>
 
@@ -368,7 +392,7 @@ export default function PointsConverterPage({ totalRupees, onBack }: Props) {
             padding: "4px 0 8px",
           }}
         >
-          Formula: ₹ = Points × 0.005 &nbsp;|&nbsp; 1 point = ₹0.005
+          Formula: ₹ = Points × 0.00167 &nbsp;|&nbsp; 3,000 points = ₹5
         </div>
       </div>
     </div>

@@ -14,8 +14,8 @@ const MAX_POINTS = 120000;
 function calcPayout(points: number): number {
   if (points < MIN_POINTS) return 0;
   const capped = Math.min(points, MAX_POINTS);
-  const steps = Math.floor((capped - MIN_POINTS) / 100);
-  return 15 + steps * 0.5;
+
+  return Math.round((capped / 600) * 100) / 100;
 }
 
 function getUpiQrUrl(upiId: string): string {
@@ -988,8 +988,10 @@ export default function WithdrawalPage({
               <strong style={{ color: "rgba(255,255,255,0.6)" }}>
                 Payout Chart:
               </strong>{" "}
-              3,000 pts = ₹15 &nbsp;|&nbsp; 4,000 pts = ₹20 &nbsp;|&nbsp; 10,000
-              pts = ₹50 &nbsp;|&nbsp; Every 100 pts above 3,000 = +₹0.50
+              3,000 pts = ₹5 &nbsp;|&nbsp; 6,000 pts = ₹10 &nbsp;|&nbsp;
+              30,000|&nbsp; 4,000 pts = ₹20 &nbsp;|&nbsp; 10,000 pts = ₹50
+              &nbsp;|&nbsp; Every 600 pts = ₹1 &nbsp;|&nbsp; 120,000 pts =
+              ₹200|&nbsp; Every 100 pts above 3,000 = +₹0.50
             </div>
 
             {withdrawError && (

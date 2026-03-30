@@ -7,6 +7,10 @@ export interface User {
   rupees: number;
   failedAttempts: number;
   lockoutUntil: number;
+  spinTickets?: number;
+  spinEarnings?: number;
+  lastDailyTicketDate?: string;
+  blocksPlacedSinceLastTicket?: number;
 }
 
 const STORAGE_KEY = "blockpuzzle_users";

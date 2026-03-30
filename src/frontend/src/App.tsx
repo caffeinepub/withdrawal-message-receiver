@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import BalancePage from "./BalancePage";
 import LeaderboardModal from "./LeaderboardModal";
 import LoginScreen from "./LoginScreen";
 import PointsConverterPage from "./PointsConverterPage";
+import SpinWheelPage from "./SpinWheelPage";
 import WithdrawalAdminPanel from "./WithdrawalAdminPanel";
 import WithdrawalPage from "./WithdrawalPage";
 import {
@@ -472,6 +474,9 @@ export default function App() {
   const scoreRef = useRef(0);
   const [highScore, setHighScore] = useState(0);
   const [totalRupees, setTotalRupees] = useState(0);
+  const [spinTickets, setSpinTickets] = useState(0);
+  const [spinEarnings, setSpinEarnings] = useState(0);
+  const blocksPlacedRef = useRef(0);
   const [clearingCells, setClearingCells] = useState<Set<string>>(new Set());
   const [placedCells, setPlacedCells] = useState<Set<string>>(new Set());
   const [scorePopups, setScorePopups] = useState<ScorePopup[]>([]);
@@ -487,17 +492,25 @@ export default function App() {
   const stepIndexRef = useRef(0);
   const prevRupeesRef = useRef(0);
   const gridRef = useRef<Grid>(makeEmptyGrid());
+  const draggingRef = useRef<DragState | null>(null);
+  const gameStateRef = useRef<GameState>("splash");
 
   const cellPreviewPx = Math.max(16, Math.floor(cellPx * 0.62));
 
-  const [view, setView] = useState<"game" | "withdraw" | "points" | "admin">(
-    "game",
-  );
+  const [view, setView] = useState<
+    "game" | "withdraw" | "points" | "admin" | "spin" | "balance"
+  >("game");
 
   useEffect(() => {
     gridRef.current = grid;
   }, [grid]);
 
+  useEffect(() => {
+    draggingRef.current = dragging;
+  }, [dragging]);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
   useEffect(() => {
     const OWNER = "ADARSH_CHAUDHARY_OWNER";
     const t = setTimeout(() => {
@@ -575,34 +588,33 @@ export default function App() {
     [cellPx],
   );
 
+  // Stable drag handlers using refs -- listeners attached once, never recreated on each move
   useEffect(() => {
-    if (!dragging) return;
     const onMove = (e: PointerEvent) => {
-      const cx = e.clientX;
-      const cy = e.clientY;
-      setDragging((d) => (d ? { ...d, x: cx, y: cy, snapTarget: null } : null));
+      if (!draggingRef.current) return;
+      e.preventDefault();
+      setDragging((d) => (d ? { ...d, x: e.clientX, y: e.clientY } : null));
     };
     const onUp = (e: PointerEvent) => {
-      if (dragging && gameState === "playing") {
+      const d = draggingRef.current;
+      if (d && gameStateRef.current === "playing") {
         const cell = getCellFromPointer(e.clientX, e.clientY);
-        if (
-          cell &&
-          canPlace(gridRef.current, dragging.piece, cell.row, cell.col)
-        ) {
-          // Manual drop on valid cell
-          attemptPlace(dragging.pieceIndex, dragging.piece, cell.row, cell.col);
+        if (cell && canPlace(gridRef.current, d.piece, cell.row, cell.col)) {
+          attemptPlace(d.pieceIndex, d.piece, cell.row, cell.col);
         }
-        // Invalid drop: block simply returns to tray
       }
       setDragging(null);
     };
-    window.addEventListener("pointermove", onMove);
+    const onCancel = () => setDragging(null);
+    window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
     };
-  }, [dragging, gameState, getCellFromPointer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getCellFromPointer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const spawnSparkles = useCallback(
     (clearing: Set<string>) => {
@@ -682,13 +694,34 @@ export default function App() {
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
       // Score-based earning: points increase as score grows
       const scoreTier = Math.floor(scoreRef.current / 100);
-      const baseMin = Math.min(12 + scoreTier * 2, 40);
-      const baseRange = Math.min(7 + scoreTier, 20);
+      const baseMin = Math.min(17 + scoreTier * 2, 45);
+      const baseRange = Math.min(9 + scoreTier, 20);
       const placementPts = Math.floor(Math.random() * baseRange) + baseMin;
       stepIndexRef.current += 1;
       setGrid((currentGrid) => {
         if (!canPlace(currentGrid, piece, row, col)) return currentGrid;
         playSound("place");
+        // Track blocks placed for ticket earning
+        blocksPlacedRef.current += 1;
+        if (blocksPlacedRef.current >= 8) {
+          blocksPlacedRef.current = 0;
+          setSpinTickets((t) => {
+            const newT = t + 1;
+            if (currentUser) {
+              const usrs = getUsers();
+              const uidx = usrs.findIndex((u) => u.username === currentUser);
+              if (uidx !== -1) {
+                usrs[uidx] = {
+                  ...usrs[uidx],
+                  spinTickets: newT,
+                  blocksPlacedSinceLastTicket: 0,
+                };
+                saveUsers(usrs);
+              }
+            }
+            return newT;
+          });
+        }
         const placed = placePiece(currentGrid, piece, row, col);
         const newPlaced = new Set<string>();
         for (let r = 0; r < piece.cells.length; r++)
@@ -831,11 +864,31 @@ export default function App() {
   const handleLogin = (username: string) => {
     setCurrentUser(username);
     const users = getUsers();
-    const user = users.find((u) => u.username === username);
-    if (user) {
+    const idx = users.findIndex((u) => u.username === username);
+    if (idx !== -1) {
+      const user = users[idx];
       setHighScore(user.highScore);
       setScore(user.currentScore ?? 0);
       setTotalRupees(user.rupees ?? 0);
+      setSpinEarnings(user.spinEarnings ?? 0);
+
+      // Daily ticket grant
+      const today = new Date().toISOString().slice(0, 10);
+      let tickets = user.spinTickets ?? 0;
+      let updatedUser = { ...user };
+      if (user.lastDailyTicketDate !== today) {
+        const dailyBonus = 3;
+        tickets = tickets + dailyBonus;
+        updatedUser = {
+          ...updatedUser,
+          lastDailyTicketDate: today,
+          spinTickets: tickets,
+        };
+        users[idx] = updatedUser;
+        saveUsers(users);
+      }
+      setSpinTickets(tickets);
+      blocksPlacedRef.current = user.blocksPlacedSinceLastTicket ?? 0;
     }
     saveSession(username);
     setGameState("idle");
@@ -850,7 +903,14 @@ export default function App() {
         saveUsers(
           users.map((u) =>
             u.username === currentUser
-              ? { ...u, currentScore: score, rupees: totalRupees }
+              ? {
+                  ...u,
+                  currentScore: score,
+                  rupees: totalRupees,
+                  spinTickets,
+                  spinEarnings,
+                  blocksPlacedSinceLastTicket: blocksPlacedRef.current,
+                }
               : u,
           ),
         );
@@ -860,6 +920,8 @@ export default function App() {
     setHighScore(0);
     setScore(0);
     setTotalRupees(0);
+    setSpinTickets(0);
+    setSpinEarnings(0);
     setGrid(makeEmptyGrid());
     clearSession();
     setGameState("auth");
@@ -1135,6 +1197,62 @@ export default function App() {
   // ─── Main Game UI ────────────────────────────────────────────────────────
   if (view === "admin") {
     return <WithdrawalAdminPanel onBack={() => setView("game")} />;
+  }
+
+  if (view === "spin") {
+    return (
+      <SpinWheelPage
+        username={currentUser ?? ""}
+        spinTickets={spinTickets}
+        onBack={() => setView("game")}
+        onEarnTickets={(n) => {
+          setSpinTickets((t) => {
+            const newT = Math.max(0, t + n);
+            if (currentUser) {
+              const usrs = getUsers();
+              const uidx = usrs.findIndex((u) => u.username === currentUser);
+              if (uidx !== -1) {
+                usrs[uidx] = { ...usrs[uidx], spinTickets: newT };
+                saveUsers(usrs);
+              }
+            }
+            return newT;
+          });
+        }}
+        onEarnPoints={(pts) => {
+          setTotalRupees((r) => {
+            const newR = r + pts;
+            setSpinEarnings((e) => {
+              const newE = e + pts;
+              if (currentUser) {
+                const usrs = getUsers();
+                const uidx = usrs.findIndex((u) => u.username === currentUser);
+                if (uidx !== -1) {
+                  usrs[uidx] = {
+                    ...usrs[uidx],
+                    rupees: newR,
+                    spinEarnings: newE,
+                  };
+                  saveUsers(usrs);
+                }
+              }
+              return newE;
+            });
+            return newR;
+          });
+        }}
+      />
+    );
+  }
+
+  if (view === "balance") {
+    return (
+      <BalancePage
+        totalRupees={totalRupees}
+        spinEarnings={spinEarnings}
+        onBack={() => setView("game")}
+      />
+    );
   }
 
   if (view === "withdraw") {
@@ -1425,62 +1543,116 @@ export default function App() {
                   position: "relative",
                 }}
               >
-                {Array.from({ length: GRID_SIZE }, (_, row) =>
-                  Array.from({ length: GRID_SIZE }, (_, col) => {
-                    const key = `${row},${col}`;
-                    const cellColor = grid[row][col];
-                    const isClearing = clearingCells.has(key);
-                    const isPlaced = placedCells.has(key);
-                    let extraClass = "";
-                    if (isClearing) extraClass = "cell-clearing";
-                    else if (isPlaced && cellColor) extraClass = "cell-placed";
+                {(() => {
+                  // Compute ghost/shadow preview cells while dragging
+                  const ghostCells = new Set<string>();
+                  let ghostValid = false;
+                  if (dragging && boardRef.current) {
+                    const rect = boardRef.current.getBoundingClientRect();
+                    const relX = dragging.x - rect.left - 8;
+                    const relY = dragging.y - rect.top - 8;
+                    const col = Math.floor(relX / cellPx);
+                    const row = Math.floor(relY / cellPx);
+                    if (
+                      row >= 0 &&
+                      row < GRID_SIZE &&
+                      col >= 0 &&
+                      col < GRID_SIZE
+                    ) {
+                      ghostValid = canPlace(grid, dragging.piece, row, col);
+                      for (let r = 0; r < dragging.piece.cells.length; r++) {
+                        for (
+                          let c = 0;
+                          c < dragging.piece.cells[r].length;
+                          c++
+                        ) {
+                          if (dragging.piece.cells[r][c] === 1) {
+                            const gr = row + r;
+                            const gc = col + c;
+                            if (
+                              gr >= 0 &&
+                              gr < GRID_SIZE &&
+                              gc >= 0 &&
+                              gc < GRID_SIZE
+                            ) {
+                              ghostCells.add(`${gr},${gc}`);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  return Array.from({ length: GRID_SIZE }, (_, row) =>
+                    Array.from({ length: GRID_SIZE }, (_, col) => {
+                      const key = `${row},${col}`;
+                      const cellColor = grid[row][col];
+                      const isClearing = clearingCells.has(key);
+                      const isPlaced = placedCells.has(key);
+                      let extraClass = "";
+                      if (isClearing) extraClass = "cell-clearing";
+                      else if (isPlaced && cellColor)
+                        extraClass = "cell-placed";
 
-                    if (cellColor) {
-                      const light = lightenColor(cellColor);
-                      const dark = darkenColor(cellColor);
+                      if (cellColor) {
+                        const light = lightenColor(cellColor);
+                        const dark = darkenColor(cellColor);
+                        return (
+                          <div
+                            key={key}
+                            className={extraClass}
+                            style={{
+                              width: cellPx - 2,
+                              height: cellPx - 2,
+                              borderRadius: 6,
+                              background: `linear-gradient(145deg, ${light} 0%, ${cellColor} 50%, ${dark} 100%)`,
+                              border: `2px solid ${light}`,
+                              boxShadow: `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px ${cellColor}88`,
+                              position: "relative",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                borderRadius: 6,
+                                background:
+                                  "radial-gradient(ellipse at 40% 25%, rgba(255,255,255,0.55) 0%, transparent 65%)",
+                                pointerEvents: "none",
+                              }}
+                            />
+                          </div>
+                        );
+                      }
+
+                      const isGhost = ghostCells.has(key);
                       return (
                         <div
                           key={key}
-                          className={extraClass}
                           style={{
                             width: cellPx - 2,
                             height: cellPx - 2,
-                            borderRadius: 6,
-                            background: `linear-gradient(145deg, ${light} 0%, ${cellColor} 50%, ${dark} 100%)`,
-                            border: `2px solid ${light}`,
-                            boxShadow: `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px ${cellColor}88`,
-                            position: "relative",
-                            overflow: "hidden",
+                            borderRadius: isGhost ? 6 : 4,
+                            background: isGhost
+                              ? ghostValid
+                                ? `${dragging!.piece.color}55`
+                                : "rgba(255,80,80,0.35)"
+                              : "rgba(255,255,255,0.04)",
+                            border: isGhost
+                              ? ghostValid
+                                ? `2px solid ${dragging!.piece.color}99`
+                                : "2px solid rgba(255,80,80,0.6)"
+                              : "1px solid rgba(255,255,255,0.06)",
+                            boxShadow:
+                              isGhost && ghostValid
+                                ? `0 0 6px ${dragging!.piece.color}66`
+                                : undefined,
                           }}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              borderRadius: 6,
-                              background:
-                                "radial-gradient(ellipse at 40% 25%, rgba(255,255,255,0.55) 0%, transparent 65%)",
-                              pointerEvents: "none",
-                            }}
-                          />
-                        </div>
+                        />
                       );
-                    }
-
-                    return (
-                      <div
-                        key={key}
-                        style={{
-                          width: cellPx - 2,
-                          height: cellPx - 2,
-                          borderRadius: 4,
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.06)",
-                        }}
-                      />
-                    );
-                  }),
-                )}
+                    }),
+                  );
+                })()}
 
                 {/* Sweep lines */}
                 {sweepLines.map((sweep) =>
@@ -1981,171 +2153,215 @@ export default function App() {
               left: 0,
               right: 0,
               zIndex: 500,
+              height: 72,
               borderTop: "2px solid #fbbf24",
               boxShadow:
                 "0 -4px 20px rgba(251,191,36,0.4), 0 -2px 8px rgba(0,0,0,0.6)",
+              background: "linear-gradient(180deg, #1a0e00 0%, #0d0700 100%)",
               display: "flex",
+              alignItems: "stretch",
             }}
           >
-            {/* Withdraw Button */}
-            <button
-              type="button"
-              data-ocid="withdraw.open_modal_button"
+            {/* Left section: 4 flat nav buttons */}
+            <div
               style={{
-                flex: 1,
-                background:
-                  "linear-gradient(90deg, #78350f 0%, #b45309 40%, #d97706 60%, #b45309 80%, #78350f 100%)",
-                padding: "10px 12px",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                cursor: "pointer",
-                border: "none",
-                borderRight: "1px solid rgba(251,191,36,0.3)",
+                flex: 1,
+                paddingRight: 84,
               }}
-              onClick={() => setView("withdraw")}
-              aria-label="Open withdrawal page"
             >
-              <span style={{ fontSize: "1.2rem" }}>💰</span>
-              <div
+              {/* Withdrawal Button */}
+              <button
+                type="button"
+                data-ocid="withdraw.open_modal_button"
                 style={{
+                  flex: 1,
+                  background: "transparent",
+                  padding: "6px 4px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  lineHeight: 1.2,
+                  justifyContent: "center",
+                  gap: 2,
+                  cursor: "pointer",
+                  border: "none",
+                  borderRight: "1px solid rgba(251,191,36,0.15)",
+                  color: "#fde68a",
                 }}
+                onClick={() => setView("withdraw")}
+                aria-label="Open withdrawal page"
               >
+                <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>💰</span>
                 <span
                   style={{
-                    fontSize: "0.55rem",
+                    fontSize: "0.48rem",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
                     color: "#fde68a",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    textAlign: "center",
                   }}
                 >
-                  TOTAL EARNINGS
+                  WITHDRAWAL
                 </span>
-                <span
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 900,
-                    color: "#FCD34D",
-                    textShadow: "0 0 12px #FCD34DAA",
-                  }}
-                >
-                  {Math.floor(totalRupees).toLocaleString()} PTS
-                </span>
-              </div>
-            </button>
-            {/* Points Converter Button */}
-            <button
-              type="button"
-              data-ocid="points_converter.open_modal_button"
-              style={{
-                flex: 1,
-                background:
-                  "linear-gradient(90deg, #1e1b4b 0%, #3730a3 40%, #4f46e5 60%, #3730a3 80%, #1e1b4b 100%)",
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                cursor: "pointer",
-                border: "none",
-              }}
-              onClick={() => setView("points")}
-              aria-label="Open points converter"
-            >
-              <span style={{ fontSize: "1.2rem" }}>🔄</span>
-              <div
+              </button>
+              {/* My Points Button */}
+              <button
+                type="button"
+                data-ocid="points_converter.open_modal_button"
                 style={{
+                  flex: 1,
+                  background: "transparent",
+                  padding: "6px 4px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  lineHeight: 1.2,
+                  justifyContent: "center",
+                  gap: 2,
+                  cursor: "pointer",
+                  border: "none",
+                  borderRight: "1px solid rgba(251,191,36,0.15)",
+                  color: "#c7d2fe",
                 }}
+                onClick={() => setView("points")}
+                aria-label="Open points converter"
               >
+                <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>🔄</span>
                 <span
                   style={{
-                    fontSize: "0.55rem",
-                    color: "#c7d2fe",
-                    letterSpacing: "0.15em",
+                    fontSize: "0.48rem",
+                    letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     fontWeight: 700,
+                    color: "#c7d2fe",
+                    lineHeight: 1.2,
+                    textAlign: "center",
                   }}
                 >
                   MY POINTS
                 </span>
-                <span
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 900,
-                    color: "#a5b4fc",
-                    textShadow: "0 0 12px #818cf888",
-                  }}
-                >
-                  {Math.floor(totalRupees).toLocaleString()}
-                </span>
-              </div>
-            </button>
-            {currentUser === "ADARSH_CHAUDHARY_OWNER" && (
+              </button>
+              {/* Balance Button */}
               <button
                 type="button"
-                data-ocid="admin.open_modal_button"
+                data-ocid="balance.open_modal_button"
                 style={{
                   flex: 1,
-                  background:
-                    "linear-gradient(90deg, #1a0a3d 0%, #3b1f6e 40%, #4c1d95 60%, #3b1f6e 80%, #1a0a3d 100%)",
-                  padding: "10px 12px",
+                  background: "transparent",
+                  padding: "6px 4px",
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
+                  gap: 2,
                   cursor: "pointer",
                   border: "none",
-                  borderLeft: "1px solid rgba(124,58,237,0.4)",
+                  borderRight: "1px solid rgba(16,185,129,0.2)",
+                  color: "#86efac",
                 }}
-                onClick={() => setView("admin")}
-                aria-label="Open admin panel"
+                onClick={() => setView("balance")}
+                aria-label="Open balance page"
               >
-                <span style={{ fontSize: "1.2rem" }}>🔐</span>
-                <div
+                <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>📊</span>
+                <span
                   style={{
+                    fontSize: "0.48rem",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                    color: "#86efac",
+                    lineHeight: 1.2,
+                    textAlign: "center",
+                  }}
+                >
+                  BALANCE
+                </span>
+              </button>
+              {/* Admin Button - owner only */}
+              {currentUser === "ADARSH_CHAUDHARY_OWNER" && (
+                <button
+                  type="button"
+                  data-ocid="admin.open_modal_button"
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    padding: "6px 4px",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    lineHeight: 1.2,
+                    justifyContent: "center",
+                    gap: 2,
+                    cursor: "pointer",
+                    border: "none",
+                    color: "#c4b5fd",
                   }}
+                  onClick={() => setView("admin")}
+                  aria-label="Open admin panel"
                 >
+                  <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>🔐</span>
                   <span
                     style={{
-                      fontSize: "0.55rem",
-                      color: "#c4b5fd",
-                      letterSpacing: "0.15em",
+                      fontSize: "0.48rem",
+                      letterSpacing: "0.08em",
                       textTransform: "uppercase",
                       fontWeight: 700,
-                    }}
-                  >
-                    OWNER
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.85rem",
-                      fontWeight: 900,
-                      color: "#a78bfa",
-                      textShadow: "0 0 12px #7c3aed88",
+                      color: "#c4b5fd",
+                      lineHeight: 1.2,
+                      textAlign: "center",
                     }}
                   >
                     ADMIN
                   </span>
-                </div>
-              </button>
-            )}
+                </button>
+              )}
+            </div>
+
+            {/* Circular Spin Button - right side, floats above bar */}
+            <button
+              type="button"
+              data-ocid="spin.open_modal_button"
+              onClick={() => setView("spin")}
+              aria-label="Open spin wheel"
+              style={{
+                position: "absolute",
+                right: 12,
+                bottom: 10,
+                width: 66,
+                height: 66,
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(135deg, #b45309 0%, #d97706 35%, #fbbf24 60%, #f59e0b 80%, #92400e 100%)",
+                border: "3px solid #fde68a",
+                boxShadow:
+                  "0 0 18px rgba(251,191,36,0.8), 0 0 36px rgba(251,191,36,0.4), inset 0 1px 0 rgba(255,255,255,0.3)",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                padding: 0,
+                zIndex: 10,
+              }}
+            >
+              <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>🎰</span>
+              <span
+                style={{
+                  fontSize: "0.45rem",
+                  fontWeight: 900,
+                  color: "#fff",
+                  letterSpacing: "0.05em",
+                  lineHeight: 1.1,
+                  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                }}
+              >
+                {spinTickets}🎟️
+              </span>
+            </button>
           </div>
           {/* Spacer so footer content isn't hidden by fixed bar */}
-          <div style={{ height: 70 }} />
+          <div style={{ height: 80 }} />
         </div>
       )}
     </>
