@@ -701,11 +701,9 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      // Score-based earning: points increase as score grows
-      const scoreTier = Math.floor(scoreRef.current / 100);
-      const baseMin = Math.min(17 + scoreTier * 2, 45);
-      const baseRange = Math.min(9 + scoreTier, 20);
-      const placementPts = Math.floor(Math.random() * baseRange) + baseMin;
+      // Fixed earning: 10 to 13 points per block placement
+      const placementPts = Math.floor(Math.random() * 4) + 10;
+
       stepIndexRef.current += 1;
       setGrid((currentGrid) => {
         if (!canPlace(currentGrid, piece, row, col)) return currentGrid;
