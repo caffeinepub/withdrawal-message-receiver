@@ -33,7 +33,7 @@ const CANDY_COLORS = [
 
 const C = CANDY_COLORS;
 
-const SHAPES = [
+const SHAPES: Shape[] = [
   { name: "I5H", cells: [[1, 1, 1, 1, 1]], color: C[4] },
   { name: "I5V", cells: [[1], [1], [1], [1], [1]], color: C[0] },
   { name: "I3H", cells: [[1, 1, 1]], color: C[3] },
@@ -183,9 +183,15 @@ const SHAPES = [
     ],
     color: C[6],
   },
-] as const;
+  { name: "BOMB", cells: [[1]], color: "#FF4500", isBomb: true },
+];
 
-type Shape = (typeof SHAPES)[number];
+interface Shape {
+  readonly name: string;
+  readonly cells: readonly (readonly number[])[];
+  readonly color: string;
+  readonly isBomb?: boolean;
+}
 type Grid = (string | null)[][];
 type GameState =
   | "splash"
@@ -229,7 +235,12 @@ function makeEmptyGrid(): Grid {
   return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
 }
 function randomPiece(): Shape {
-  return SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  if (Math.random() < 0.1) {
+    const bomb = SHAPES.find((s) => s.isBomb);
+    if (bomb) return bomb;
+  }
+  const normal = SHAPES.filter((s) => !s.isBomb);
+  return normal[Math.floor(Math.random() * normal.length)];
 }
 function randomQueue(): [Shape | null, Shape | null, Shape | null] {
   return [randomPiece(), randomPiece(), randomPiece()];
@@ -375,13 +386,21 @@ function playArpeggio(): void {
 const SPARK_COLORS = [...CANDY_COLORS];
 const SPARK_DIRS = [
   { x: 0, y: -1 },
+  { x: 0.38, y: -0.92 },
   { x: 0.7, y: -0.7 },
+  { x: 0.92, y: -0.38 },
   { x: 1, y: 0 },
+  { x: 0.92, y: 0.38 },
   { x: 0.7, y: 0.7 },
+  { x: 0.38, y: 0.92 },
   { x: 0, y: 1 },
+  { x: -0.38, y: 0.92 },
   { x: -0.7, y: 0.7 },
+  { x: -0.92, y: 0.38 },
   { x: -1, y: 0 },
+  { x: -0.92, y: -0.38 },
   { x: -0.7, y: -0.7 },
+  { x: -0.38, y: -0.92 },
 ];
 
 // ─── Floating block shapes for splash ─────────────────────────────────────
@@ -494,10 +513,15 @@ export default function App() {
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
   const [sweepLines, setSweepLines] = useState<SweepLine[]>([]);
+  const [bombBlasts, setBombBlasts] = useState<
+    Array<{ id: number; x: number; y: number }>
+  >([]);
+  const [boardShaking, setBoardShaking] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
   const popupIdRef = useRef(0);
   const sparkleIdRef = useRef(0);
   const sweepIdRef = useRef(0);
+  const bombBlastIdRef = useRef(0);
   const stepIndexRef = useRef(0);
   const prevRupeesRef = useRef(0);
   const gridRef = useRef<Grid>(makeEmptyGrid());
@@ -636,7 +660,7 @@ export default function App() {
         const cellTop = 8 + r * cellPx + cellPx / 2;
         const dirs = SPARK_DIRS.filter(
           (_, i) => i % (clearing.size > 20 ? 2 : 1) === 0,
-        ).slice(0, 6);
+        ).slice(0, 10);
         for (const dir of dirs) {
           const color =
             SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)];
@@ -679,6 +703,47 @@ export default function App() {
     }, 200);
   }, []);
 
+  const spawnBombBlast = useCallback(
+    (row: number, col: number) => {
+      if (!boardRef.current) return;
+      const x = 8 + col * cellPx + cellPx / 2;
+      const y = 8 + row * cellPx + cellPx / 2;
+      const blast = { id: ++bombBlastIdRef.current, x, y };
+      setBombBlasts((prev) => [...prev, blast]);
+      // Spawn large fire-colored sparkles
+      const FIRE_COLORS = [
+        "#FF4500",
+        "#FF8C00",
+        "#FFF700",
+        "#FF0000",
+        "#FF6B00",
+      ];
+      const newSparkles: Sparkle[] = [];
+      const bigDist = cellPx * 3;
+      for (const dir of SPARK_DIRS) {
+        const color =
+          FIRE_COLORS[Math.floor(Math.random() * FIRE_COLORS.length)];
+        const d = bigDist * (0.5 + Math.random() * 1.0);
+        newSparkles.push({
+          id: ++sparkleIdRef.current,
+          left: x,
+          top: y,
+          color,
+          tx: `translate(${dir.x * d}px, ${dir.y * d}px)`,
+        });
+      }
+      setSparkles((prev) => [...prev, ...newSparkles]);
+      setTimeout(() => {
+        setBombBlasts((prev) => prev.filter((b) => b.id !== blast.id));
+      }, 650);
+      setTimeout(() => {
+        const ids = new Set(newSparkles.map((s) => s.id));
+        setSparkles((prev) => prev.filter((s) => !ids.has(s.id)));
+      }, 520);
+    },
+    [cellPx],
+  );
+
   const showPlacementPopup = useCallback(
     (pts: number, row: number, col: number, _color: string) => {
       if (!boardRef.current) return;
@@ -701,8 +766,13 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      // Fixed earning: 10 to 13 points per block placement
-      const placementPts = Math.floor(Math.random() * 4) + 10;
+      // Fixed earning: 3 to 12 points per block placement
+      const placementPts = Math.floor(Math.random() * 10) + 3;
+
+      // Trigger bomb blast animation immediately (outside setGrid)
+      if (piece.isBomb) {
+        spawnBombBlast(row, col);
+      }
 
       stepIndexRef.current += 1;
       setGrid((currentGrid) => {
@@ -736,7 +806,26 @@ export default function App() {
             if (piece.cells[r][c] === 1) newPlaced.add(`${row + r},${col + c}`);
         setPlacedCells(newPlaced);
         setTimeout(() => setPlacedCells(new Set()), 80);
-        const { rows, cols } = findClearedLines(placed);
+        // Handle bomb: clear 3x3 area around placement
+        let finalGrid = placed;
+        if (piece.isBomb) {
+          const bombGrid = placed.map((r) => [...r]);
+          for (
+            let br = Math.max(0, row - 1);
+            br <= Math.min(GRID_SIZE - 1, row + 1);
+            br++
+          ) {
+            for (
+              let bc = Math.max(0, col - 1);
+              bc <= Math.min(GRID_SIZE - 1, col + 1);
+              bc++
+            ) {
+              bombGrid[br][bc] = null;
+            }
+          }
+          finalGrid = bombGrid;
+        }
+        const { rows, cols } = findClearedLines(finalGrid);
         const lineClearPts = calcScore(rows, cols);
         if (rows.length > 0 || cols.length > 0) {
           playSound("clear");
@@ -749,10 +838,13 @@ export default function App() {
           spawnSweepLines(rows, cols);
           setTimeout(() => spawnSparkles(clearing), 100);
           setClearingCells(clearing);
+          // Board shake on line clear
+          setBoardShaking(true);
+          setTimeout(() => setBoardShaking(false), 400);
           const totalPts = placementPts + lineClearPts;
           showPlacementPopup(totalPts, row, col, piece.color);
           setTimeout(() => {
-            const cleared = clearLines(placed, rows, cols);
+            const cleared = clearLines(finalGrid, rows, cols);
             setClearingCells(new Set());
             setQueue((currentQueue) => {
               let newQueue = [...currentQueue] as [
@@ -793,7 +885,7 @@ export default function App() {
             });
             setGrid(cleared);
           }, 150);
-          return placed;
+          return finalGrid;
         }
         showPlacementPopup(placementPts, row, col, piece.color);
         setScore((s) => {
@@ -816,7 +908,7 @@ export default function App() {
           const allUsed = newQueue.every((p) => p === null);
           if (allUsed) newQueue = randomQueue();
           const isOver = newQueue.every(
-            (p) => p === null || !hasAnyValidPlacement(placed, p),
+            (p) => p === null || !hasAnyValidPlacement(finalGrid, p),
           );
           if (isOver) {
             setGameState("gameover");
@@ -843,6 +935,7 @@ export default function App() {
     [
       spawnSparkles,
       spawnSweepLines,
+      spawnBombBlast,
       showPlacementPopup,
       currentUser,
       totalRupees,
@@ -1534,6 +1627,7 @@ export default function App() {
               <div
                 ref={boardRef}
                 data-ocid="game.canvas_target"
+                className={boardShaking ? "board-shaking" : ""}
                 style={{
                   display: "grid",
                   gridTemplateColumns: `repeat(${GRID_SIZE}, ${cellPx}px)`,
@@ -1704,6 +1798,15 @@ export default function App() {
                         "--spark-tx": spark.tx,
                       } as React.CSSProperties
                     }
+                  />
+                ))}
+
+                {/* Bomb blasts */}
+                {bombBlasts.map((blast) => (
+                  <div
+                    key={blast.id}
+                    className="bomb-blast"
+                    style={{ left: blast.x, top: blast.y }}
                   />
                 ))}
 
@@ -2425,13 +2528,15 @@ function PiecePreview({
               border: cell === 1 ? `1px solid ${light}` : "none",
               boxShadow:
                 cell === 1
-                  ? `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 ${ghost ? 12 : 6}px ${piece.color}88`
+                  ? piece.isBomb
+                    ? `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,150,0,0.6), 0 0 ${ghost ? 20 : 12}px #FF450088, 0 0 ${ghost ? 30 : 20}px #FF8C0066`
+                    : `0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 ${ghost ? 12 : 6}px ${piece.color}88`
                   : "none",
               position: "relative",
               overflow: "hidden",
             }}
           >
-            {cell === 1 && (
+            {cell === 1 && !piece.isBomb && (
               <div
                 style={{
                   position: "absolute",
@@ -2442,6 +2547,22 @@ function PiecePreview({
                   pointerEvents: "none",
                 }}
               />
+            )}
+            {cell === 1 && piece.isBomb && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: Math.max(10, Math.floor(cellSize * 0.72)),
+                  lineHeight: 1,
+                  pointerEvents: "none",
+                }}
+              >
+                💣
+              </div>
             )}
           </div>
         )),

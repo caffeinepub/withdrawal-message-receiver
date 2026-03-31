@@ -181,39 +181,49 @@
   animation: candyDrop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* ─── Candy Crush cell-clear animation ──────────────────────────────────── */
+/* ─── Candy Crush cell-clear animation (Crush & Blast) ──────────────────── */
 @keyframes cellClearPhase1 {
   0% {
     transform: scale(1);
     filter: brightness(1);
     opacity: 1;
   }
-  30% {
-    transform: scale(1.2);
-    filter: brightness(2) hue-rotate(60deg);
+  20% {
+    transform: scale(1.35);
+    filter: brightness(4) hue-rotate(30deg) saturate(3);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.5);
+    filter: brightness(8) saturate(4) hue-rotate(90deg);
     opacity: 1;
   }
   100% {
-    transform: scale(1.2);
-    filter: brightness(3.5) hue-rotate(120deg);
+    transform: scale(1.5);
+    filter: brightness(12) saturate(5) hue-rotate(150deg);
     opacity: 1;
   }
 }
 @keyframes cellClearPhase2 {
   0% {
-    transform: scale(1.2);
-    filter: brightness(3.5) saturate(2);
+    transform: scale(1.5);
+    filter: brightness(12) saturate(4);
     opacity: 1;
   }
+  40% {
+    transform: scale(0.6);
+    filter: brightness(20) saturate(6) hue-rotate(200deg);
+    opacity: 0.9;
+  }
   100% {
-    transform: scale(0);
-    filter: brightness(5) saturate(3) hue-rotate(180deg);
+    transform: scale(0) rotate(30deg);
+    filter: brightness(25) saturate(8) hue-rotate(360deg);
     opacity: 0;
   }
 }
 .cell-clearing {
-  animation: cellClearPhase1 0.15s ease-out forwards, cellClearPhase2 0.22s
-    0.15s cubic-bezier(0.36, 0, 0.66, -0.2) forwards;
+  animation: cellClearPhase1 0.12s ease-out forwards, cellClearPhase2 0.25s
+    0.12s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
   z-index: 2;
   position: relative;
 }
@@ -263,45 +273,49 @@
 }
 .sweep-row {
   position: absolute;
-  height: 4px;
+  height: 5px;
   width: var(--sweep-w, 100%);
   background: linear-gradient(
     90deg,
     transparent,
+    #ffffff,
     #ff2d55,
     #ff9500,
     #ffd60a,
     #34c759,
     #007aff,
     #bf5af2,
+    #ffffff,
     transparent
   );
-  box-shadow: 0 0 10px #fff, 0 0 20px #ff9500;
+  box-shadow: 0 0 8px #fff, 0 0 18px #fff, 0 0 30px #ff9500, 0 0 50px #ff9500aa;
   pointer-events: none;
   animation: sweepRow 0.15s linear forwards;
   z-index: 15;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 .sweep-col {
   position: absolute;
-  width: 4px;
+  width: 5px;
   height: var(--sweep-h, 100%);
   background: linear-gradient(
     180deg,
     transparent,
+    #ffffff,
     #ff2d55,
     #ff9500,
     #ffd60a,
     #34c759,
     #007aff,
     #bf5af2,
+    #ffffff,
     transparent
   );
-  box-shadow: 0 0 10px #fff, 0 0 20px #ff9500;
+  box-shadow: 0 0 8px #fff, 0 0 18px #fff, 0 0 30px #ff9500, 0 0 50px #ff9500aa;
   pointer-events: none;
   animation: sweepCol 0.15s linear forwards;
   z-index: 15;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 /* ─── Score popup ───────────────────────────────────────────────────────── */
@@ -402,4 +416,100 @@
 .no-select {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* ─── Board shake on line clear ─────────────────────────────────────────── */
+@keyframes boardShake {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10% {
+    transform: translate(-5px, -3px) rotate(-0.8deg);
+  }
+  20% {
+    transform: translate(5px, 3px) rotate(0.8deg);
+  }
+  30% {
+    transform: translate(-4px, 2px) rotate(-0.5deg);
+  }
+  40% {
+    transform: translate(4px, -2px) rotate(0.5deg);
+  }
+  50% {
+    transform: translate(-3px, 3px) rotate(-0.3deg);
+  }
+  60% {
+    transform: translate(3px, -1px) rotate(0.3deg);
+  }
+  70% {
+    transform: translate(-2px, 1px) rotate(-0.2deg);
+  }
+  80% {
+    transform: translate(2px, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+.board-shaking {
+  animation: boardShake 0.4s ease-out forwards;
+}
+
+/* ─── Bomb blast explosion ───────────────────────────────────────────────── */
+@keyframes bombBlast {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  65% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
+}
+@keyframes bombRing {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0.9;
+    border-width: 6px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.8);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+.bomb-blast {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    #fff700 20%,
+    #ff4500 50%,
+    #ff0000 70%,
+    transparent 85%
+  );
+  box-shadow: 0 0 20px #fff, 0 0 40px #ff4500, 0 0 70px #ff8c00, 0 0 100px
+    #ff450066;
+  animation: bombBlast 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+.bomb-blast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 5px solid #fff700;
+  animation: bombRing 0.55s ease-out forwards;
 }
