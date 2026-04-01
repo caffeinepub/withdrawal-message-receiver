@@ -865,7 +865,7 @@ export default function App() {
               if (isOver) {
                 setGameState("gameover");
                 playSound("gameover");
-                setTotalRupees((r) => Math.max(0, r - 10));
+                // earning points not decreased on game over
                 setTimeout(() => setShowLeaderboard(true), 1200);
               }
               setScore((s) => {
@@ -876,11 +876,7 @@ export default function App() {
                 });
                 setTotalRupees((r) => (isOver ? r : r + totalPts * 0.1));
                 if (isOver && currentUser) {
-                  updateUserHighScore(
-                    currentUser,
-                    ns,
-                    Math.max(0, totalRupees - 10),
-                  );
+                  updateUserHighScore(currentUser, ns, totalRupees);
                 }
                 return ns;
               });
@@ -916,7 +912,7 @@ export default function App() {
           if (isOver) {
             setGameState("gameover");
             playSound("gameover");
-            setTotalRupees((r) => Math.max(0, r - 10));
+            // earning points not decreased on game over
             setTimeout(() => setShowLeaderboard(true), 1200);
             // Save score - read from ref since state is stale here
             if (currentUser) {
@@ -924,7 +920,7 @@ export default function App() {
                 updateUserHighScore(
                   currentUser,
                   finalScore + placementPts,
-                  Math.max(0, totalRupees - 10),
+                  totalRupees,
                 );
                 return finalScore + placementPts;
               });
@@ -950,7 +946,7 @@ export default function App() {
     setTimeout(() => {
       setGrid(makeEmptyGrid());
       setQueue(randomQueue());
-      setScore(0);
+
       setClearingCells(new Set());
       setPlacedCells(new Set());
       setSparkles([]);
