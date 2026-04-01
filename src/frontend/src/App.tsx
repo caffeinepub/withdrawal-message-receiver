@@ -836,6 +836,9 @@ export default function App() {
           for (const c of cols)
             for (let r = 0; r < GRID_SIZE; r++) clearing.add(`${r},${c}`);
           spawnSweepLines(rows, cols);
+          // Bomb blast on each cleared row/col center
+          for (const r of rows) spawnBombBlast(r, Math.floor(GRID_SIZE / 2));
+          for (const c of cols) spawnBombBlast(Math.floor(GRID_SIZE / 2), c);
           setTimeout(() => spawnSparkles(clearing), 100);
           setClearingCells(clearing);
           // Board shake on line clear
