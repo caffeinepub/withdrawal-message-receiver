@@ -766,8 +766,8 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      // Fixed earning: 3 to 12 points per block placement
-      const placementPts = Math.floor(Math.random() * 10) + 3;
+      // Fixed earning: 1 to 2 points per block placement
+      const placementPts = Math.floor(Math.random() * 2) + 1;
 
       // Trigger bomb blast animation immediately (outside setGrid)
       if (piece.isBomb) {
