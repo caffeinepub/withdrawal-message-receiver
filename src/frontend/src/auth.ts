@@ -122,6 +122,30 @@ export async function loginUser(
   username: string,
   password: string,
 ): Promise<LoginResult> {
+  // Special owner account
+  if (username.toLowerCase() === "owner_adarsh") {
+    if (password === "owner@0001") {
+      // Ensure owner user exists in storage
+      const users = getUsers();
+      let ownerUser = users.find((u) => u.username === "owner_adarsh");
+      if (!ownerUser) {
+        ownerUser = {
+          username: "owner_adarsh",
+          email: "owner@blockcraft.com",
+          passwordHash: "",
+          highScore: 0,
+          rupees: 0,
+          failedAttempts: 0,
+          lockoutUntil: 0,
+          spinTickets: 0,
+          spinEarnings: 0,
+        };
+        saveUsers([...users, ownerUser]);
+      }
+      return { success: true, user: ownerUser };
+    }
+    return { success: false, error: "Invalid username or password" };
+  }
   const users = getUsers();
   const idx = users.findIndex(
     (u) => u.username.toLowerCase() === username.toLowerCase(),

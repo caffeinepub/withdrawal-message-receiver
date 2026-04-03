@@ -545,11 +545,10 @@ export default function App() {
     gameStateRef.current = gameState;
   }, [gameState]);
   useEffect(() => {
-    const OWNER = "ADARSH_CHAUDHARY_OWNER";
     const t = setTimeout(() => {
-      // Read session at timeout time, not mount time
+      // Check for a saved session; if found, restore it (owner always must log in manually)
       const savedUser = getSavedSession();
-      if (savedUser) {
+      if (savedUser && savedUser !== "owner_adarsh") {
         const users = getUsers();
         const user = users.find((u) => u.username === savedUser);
         if (user) {
@@ -561,33 +560,11 @@ export default function App() {
           return;
         }
       }
-      // Auto-login as ADARSH_CHAUDHARY_OWNER if no active session
-      const users = getUsers();
-      let ownerUser = users.find((u) => u.username === OWNER);
-      if (!ownerUser) {
-        const newOwner: User = {
-          username: OWNER,
-          email: "owner@blockcraft.local",
-          passwordHash: "auto",
-          highScore: 0,
-          rupees: 3000,
-          failedAttempts: 0,
-          lockoutUntil: 0,
-        };
-        saveUsers([...users, newOwner]);
-        ownerUser = newOwner;
+      // Owner account or no session — always require login/signup
+      if (savedUser === "owner_adarsh") {
+        clearSession();
       }
-      // Ensure owner always has at least ₹3000 for testing
-      if ((ownerUser.rupees ?? 0) < 3000) {
-        const updatedOwner = { ...ownerUser, rupees: 3000 };
-        saveUsers(users.map((u) => (u.username === OWNER ? updatedOwner : u)));
-        ownerUser = updatedOwner;
-      }
-      setCurrentUser(OWNER);
-      setHighScore(ownerUser.highScore);
-      setTotalRupees(ownerUser.rupees ?? 0);
-      saveSession(OWNER);
-      setGameState("idle");
+      setGameState("auth");
     }, 2500);
     return () => clearTimeout(t);
   }, []);
@@ -766,8 +743,10 @@ export default function App() {
 
   const attemptPlace = useCallback(
     (pieceIndex: number, piece: Shape, row: number, col: number) => {
-      // Fixed earning: 1 to 2 points per block placement
-      const placementPts = Math.floor(Math.random() * 2) + 1;
+      // Score: 3 to 12 points per block placement
+      const placementPts = Math.floor(Math.random() * 10) + 3;
+      // Rupee earning: 2 to 3 rupees per block placement (separate from score)
+      const placementRupees = Math.floor(Math.random() * 2) + 2;
 
       // Trigger bomb blast animation immediately (outside setGrid)
       if (piece.isBomb) {
@@ -874,7 +853,7 @@ export default function App() {
                   const nh = Math.max(h, ns);
                   return nh;
                 });
-                setTotalRupees((r) => (isOver ? r : r + totalPts * 0.1));
+                setTotalRupees((r) => (isOver ? r : r + placementRupees));
                 if (isOver && currentUser) {
                   updateUserHighScore(currentUser, ns, totalRupees);
                 }
@@ -894,7 +873,7 @@ export default function App() {
             const nh = Math.max(h, ns);
             return nh;
           });
-          setTotalRupees((r) => r + placementPts * 0.1);
+          setTotalRupees((r) => r + placementRupees);
           return ns;
         });
         setQueue((currentQueue) => {
@@ -2388,7 +2367,7 @@ export default function App() {
                 </span>
               </button>
               {/* Admin Button - owner only */}
-              {currentUser === "ADARSH_CHAUDHARY_OWNER" && (
+              {currentUser === "owner_adarsh" && (
                 <button
                   type="button"
                   data-ocid="admin.open_modal_button"
