@@ -533,6 +533,7 @@ export default function App() {
   const [view, setView] = useState<
     "game" | "withdraw" | "points" | "admin" | "spin" | "balance"
   >("game");
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
     gridRef.current = grid;
@@ -556,7 +557,22 @@ export default function App() {
           setHighScore(user.highScore);
           setScore(user.currentScore ?? 0);
           setTotalRupees(user.rupees ?? 0);
-          setGameState("idle");
+          setLoadingProgress(0);
+          setGameState("loading");
+          let progress = 0;
+          const loadInterval = setInterval(() => {
+            progress += Math.floor(Math.random() * 8) + 3;
+            if (progress >= 100) {
+              progress = 100;
+              setLoadingProgress(100);
+              clearInterval(loadInterval);
+              setTimeout(() => {
+                setGameState("idle");
+              }, 300);
+            } else {
+              setLoadingProgress(progress);
+            }
+          }, 60);
           return;
         }
       }
@@ -921,18 +937,29 @@ export default function App() {
   );
 
   const startGame = () => {
+    setLoadingProgress(0);
     setGameState("loading");
-    setTimeout(() => {
-      setGrid(makeEmptyGrid());
-      setQueue(randomQueue());
-
-      setClearingCells(new Set());
-      setPlacedCells(new Set());
-      setSparkles([]);
-      setSweepLines([]);
-      setDragging(null);
-      setGameState("playing");
-    }, 1500);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 8) + 3;
+      if (progress >= 100) {
+        progress = 100;
+        setLoadingProgress(100);
+        clearInterval(interval);
+        setTimeout(() => {
+          setGrid(makeEmptyGrid());
+          setQueue(randomQueue());
+          setClearingCells(new Set());
+          setPlacedCells(new Set());
+          setSparkles([]);
+          setSweepLines([]);
+          setDragging(null);
+          setGameState("playing");
+        }, 300);
+      } else {
+        setLoadingProgress(progress);
+      }
+    }, 60);
   };
 
   // currentYear removed
@@ -1258,15 +1285,39 @@ export default function App() {
             />
           ))}
         </div>
-        <div
-          style={{
-            color: "rgba(255,255,255,0.6)",
-            fontSize: "0.9rem",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-          }}
-        >
-          Loading...
+        <div style={{ width: "80%", maxWidth: 300, textAlign: "center" }}>
+          <div
+            style={{
+              color: "#fbbf24",
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginBottom: 8,
+              fontFamily: "monospace",
+            }}
+          >
+            Loading... {loadingProgress}%
+          </div>
+          <div
+            style={{
+              width: "100%",
+              height: 14,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 99,
+              overflow: "hidden",
+              border: "2px solid rgba(255,215,0,0.4)",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${loadingProgress}%`,
+                background: "linear-gradient(90deg, #fbbf24, #f59e0b, #10b981)",
+                borderRadius: 99,
+                transition: "width 0.06s linear",
+                boxShadow: "0 0 8px rgba(251,191,36,0.7)",
+              }}
+            />
+          </div>
         </div>
       </div>
     );
