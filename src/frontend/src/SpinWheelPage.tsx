@@ -251,7 +251,7 @@ export default function SpinWheelPage({
     if (adCountdown === null) return;
     if (adCountdown === 0) {
       onEarnTickets(1);
-      onEarnPoints(20);
+      onEarnPoints(10);
       setAdCountdown(null);
       return;
     }
@@ -475,7 +475,7 @@ export default function SpinWheelPage({
         >
           {adCountdown !== null
             ? `📺 Watching ad... ${adCountdown}s`
-            : "📺 Watch Ad (+1 Ticket +20 pts)"}
+            : "📺 Watch Ad (+1 Ticket +10 pts)"}
         </button>
       </div>
 
@@ -495,10 +495,10 @@ export default function SpinWheelPage({
         <div style={{ fontWeight: 700, marginBottom: 4 }}>
           🎟️ How to earn tickets:
         </div>
-        <div>• 3 free tickets every day on login</div>
-        <div>• 1 ticket every 8 blocks placed</div>
-        <div>• Watch ads for extra tickets + 20 pts</div>
-        <div>• Max 10 tickets per day</div>
+        <div>• 5 free tickets every day on login (max 5 per day)</div>
+        <div>• Extra tickets from watching ads only</div>
+        <div>• Watch ads for extra tickets + 10 pts</div>
+        <div>• Max 5 play tickets per day (ad tickets are extra)</div>
       </div>
 
       {/* Footer */}

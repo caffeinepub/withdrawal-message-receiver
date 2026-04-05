@@ -41,7 +41,7 @@ export default function WithdrawalPage({
   // Points & payment
   const [pointsInput, setPointsInput] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState<
-    "phonepay" | "paytm" | "bank" | null
+    "phonepay" | "paytm" | "fampay" | "bank" | null
   >(null);
   const [withdrawUpi, setWithdrawUpi] = useState("");
   const [upiQrConfirmed, setUpiQrConfirmed] = useState(false);
@@ -66,7 +66,9 @@ export default function WithdrawalPage({
     enteredPoints <= Math.floor(totalRupees);
 
   const showUpiFields =
-    withdrawMethod === "phonepay" || withdrawMethod === "paytm";
+    withdrawMethod === "phonepay" ||
+    withdrawMethod === "paytm" ||
+    withdrawMethod === "fampay";
   const isUpiReady = showUpiFields
     ? withdrawUpi.trim().includes("@") &&
       (upiQrConfirmed || uploadedQr !== null)
@@ -634,6 +636,12 @@ export default function WithdrawalPage({
                     label: "Paytm",
                     color: "#00baf2",
                     border: "#7dd3fc",
+                  },
+                  {
+                    id: "fampay" as const,
+                    label: "FamPay",
+                    color: "#FFCD00",
+                    border: "#ffe566",
                   },
                   {
                     id: "bank" as const,

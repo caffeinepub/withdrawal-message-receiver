@@ -773,27 +773,8 @@ export default function App() {
       setGrid((currentGrid) => {
         if (!canPlace(currentGrid, piece, row, col)) return currentGrid;
         playSound("place");
-        // Track blocks placed for ticket earning
-        blocksPlacedRef.current += 1;
-        if (blocksPlacedRef.current >= 8) {
-          blocksPlacedRef.current = 0;
-          setSpinTickets((t) => {
-            const newT = t + 1;
-            if (currentUser) {
-              const usrs = getUsers();
-              const uidx = usrs.findIndex((u) => u.username === currentUser);
-              if (uidx !== -1) {
-                usrs[uidx] = {
-                  ...usrs[uidx],
-                  spinTickets: newT,
-                  blocksPlacedSinceLastTicket: 0,
-                };
-                saveUsers(usrs);
-              }
-            }
-            return newT;
-          });
-        }
+        // Spin tickets earned from daily login only (5 per day)
+        // No block-placement ticket earning
         const placed = placePiece(currentGrid, piece, row, col);
         const newPlaced = new Set<string>();
         for (let r = 0; r < piece.cells.length; r++)
@@ -982,7 +963,7 @@ export default function App() {
       let tickets = user.spinTickets ?? 0;
       let updatedUser = { ...user };
       if (user.lastDailyTicketDate !== today) {
-        const dailyBonus = 3;
+        const dailyBonus = 5;
         tickets = tickets + dailyBonus;
         updatedUser = {
           ...updatedUser,
