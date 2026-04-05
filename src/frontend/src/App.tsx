@@ -1330,10 +1330,16 @@ export default function App() {
           });
         }}
         onEarnPoints={(pts) => {
+          // Rupee reward encoding: pts < -100 means rupee award (rupees = -pts / 1000)
+          const isRupeeReward = pts < -100;
+          const rupeeAmount = isRupeeReward ? -pts / 1000 : 0;
+          const pointsAmount = isRupeeReward ? 0 : pts;
           setTotalRupees((r) => {
-            const newR = r + pts;
+            // For rupee rewards, add rupees directly to totalRupees balance
+            // For points, add as-is
+            const newR = isRupeeReward ? r + rupeeAmount : r + pointsAmount;
             setSpinEarnings((e) => {
-              const newE = e + pts;
+              const newE = isRupeeReward ? e + rupeeAmount : e + pointsAmount;
               if (currentUser) {
                 const usrs = getUsers();
                 const uidx = usrs.findIndex((u) => u.username === currentUser);

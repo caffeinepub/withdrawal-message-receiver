@@ -8,53 +8,63 @@ interface SpinWheelPageProps {
   onEarnPoints: (points: number) => void;
 }
 
+// Probabilities: 20pts=50%, 40pts=30%, 60pts=14%, 100pts=2.5%, 120pts=1.5%, ₹1=1%, ₹3=1%
 const PRIZES = [
+  {
+    label: "20 pts",
+    points: 20,
+    isRupee: false,
+    probability: 0.5,
+    color: "#34C759",
+    emoji: "🟢",
+  },
   {
     label: "40 pts",
     points: 40,
-    probability: 0.15,
+    isRupee: false,
+    probability: 0.3,
     color: "#FF9500",
     emoji: "🟠",
   },
   {
     label: "60 pts",
     points: 60,
-    probability: 0.25,
+    isRupee: false,
+    probability: 0.14,
     color: "#007AFF",
     emoji: "🔵",
   },
   {
-    label: "20 pts",
-    points: 20,
-    probability: 0.25,
-    color: "#34C759",
-    emoji: "🟢",
-  },
-  {
-    label: "120 pts",
-    points: 120,
-    probability: 0.25,
-    color: "#FFD60A",
-    emoji: "🟡",
-  },
-  {
     label: "100 pts",
     points: 100,
-    probability: 0.05,
+    isRupee: false,
+    probability: 0.025,
     color: "#FF2D55",
     emoji: "🔴",
   },
   {
+    label: "120 pts",
+    points: 120,
+    isRupee: false,
+    probability: 0.015,
+    color: "#FFD60A",
+    emoji: "🟡",
+  },
+  {
     label: "₹1",
-    points: 600,
-    probability: 0.03,
+    points: 0,
+    rupees: 1,
+    isRupee: true,
+    probability: 0.01,
     color: "#BF5AF2",
     emoji: "💜",
   },
   {
     label: "₹3",
-    points: 1800,
-    probability: 0.02,
+    points: 0,
+    rupees: 3,
+    isRupee: true,
+    probability: 0.01,
     color: "#FF375F",
     emoji: "💎",
   },
@@ -199,11 +209,6 @@ export default function SpinWheelPage({
     const prize = PRIZES[prizeIndex];
     const duration = 3000 + Math.random() * 2000;
 
-    // Pointer is at the TOP of canvas = angle -Math.PI/2 in canvas coords.
-    // For prize[prizeIndex] midpoint to land under the pointer:
-    //   finalAngle + prizeIndex * segmentAngle + segmentAngle/2 = -Math.PI/2 (mod 2π)
-    //   => finalAngle = -Math.PI/2 - prizeIndex * segmentAngle - segmentAngle/2
-    // Adding full rotations (5-9) to make a nice spin:
     const totalRotation =
       Math.PI * 2 * (5 + Math.floor(Math.random() * 5)) -
       Math.PI / 2 -
@@ -229,7 +234,14 @@ export default function SpinWheelPage({
         setSpinning(false);
         setResult(prize);
         setShowResult(true);
-        onEarnPoints(prize.points);
+        // Credit reward: rupee prizes credit rupees directly, points prizes credit points
+        if (prize.isRupee && prize.rupees) {
+          // Credit rupees as points equivalent: pass negative value to signal rupee reward
+          // We use a special encoding: rupee amount * -1000 to signal rupee credit
+          onEarnPoints(-(prize.rupees * 1000));
+        } else {
+          onEarnPoints(prize.points);
+        }
       }
     }
 
@@ -406,8 +418,8 @@ export default function SpinWheelPage({
             You won {result.label}!
           </div>
           <div style={{ fontSize: "0.8rem", color: "#a5b4fc", marginTop: 4 }}>
-            {result.points >= 600
-              ? `+${result.points} points (₹${result.points === 600 ? 1 : 3} credited!)`
+            {result.isRupee
+              ? `₹${result.rupees} credited to your balance!`
               : `+${result.points} points added to your balance`}
           </div>
         </div>
