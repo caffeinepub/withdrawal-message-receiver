@@ -80,7 +80,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "36px 1fr 80px 90px",
+                gridTemplateColumns: "36px 1fr 90px",
                 gap: 8,
                 padding: "6px 10px",
                 color: "rgba(255,255,255,0.4)",
@@ -93,7 +93,6 @@ export default function LeaderboardModal({ open, onClose }: Props) {
               <span>#</span>
               <span>Player</span>
               <span style={{ textAlign: "right" }}>High Score</span>
-              <span style={{ textAlign: "right" }}>Earnings ₹</span>
             </div>
 
             {allUsers.map((user, i) => (
@@ -102,7 +101,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                 data-ocid={`leaderboard.item.${i + 1}` as string}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "36px 1fr 80px 90px",
+                  gridTemplateColumns: "36px 1fr 90px",
                   gap: 8,
                   padding: "8px 10px",
                   background:
@@ -158,16 +157,6 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                   }}
                 >
                   {user.highScore.toLocaleString()}
-                </span>
-                <span
-                  style={{
-                    textAlign: "right",
-                    fontWeight: 700,
-                    color: "#FCD34D",
-                    fontSize: "0.85rem",
-                  }}
-                >
-                  ₹{user.rupees.toFixed(0)}
                 </span>
               </div>
             ))}
