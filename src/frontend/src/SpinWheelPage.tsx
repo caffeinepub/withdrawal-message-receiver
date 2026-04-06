@@ -507,10 +507,8 @@ export default function SpinWheelPage({
         <div style={{ fontWeight: 700, marginBottom: 4 }}>
           🎟️ How to earn tickets:
         </div>
-        <div>• 5 free tickets every day on login (max 5 per day)</div>
-        <div>• Extra tickets from watching ads only</div>
-        <div>• Watch ads for extra tickets + 10 pts</div>
-        <div>• Max 5 play tickets per day (ad tickets are extra)</div>
+        <div>• Max 5 tickets per day from playing</div>
+        <div>• Watch an ad to get 1 extra ticket + 10 pts</div>
       </div>
 
       {/* Footer */}

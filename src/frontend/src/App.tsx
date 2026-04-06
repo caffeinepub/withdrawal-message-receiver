@@ -963,8 +963,9 @@ export default function App() {
       let tickets = user.spinTickets ?? 0;
       let updatedUser = { ...user };
       if (user.lastDailyTicketDate !== today) {
-        const dailyBonus = 5;
-        tickets = tickets + dailyBonus;
+        // Daily play tickets: max 5 per day. Ad tickets (earned separately) can go above 5.
+        // Reset daily play tickets to 5 (top up to 5, but don't add on top of existing ad extras)
+        tickets = Math.max(tickets, 5);
         updatedUser = {
           ...updatedUser,
           lastDailyTicketDate: today,
