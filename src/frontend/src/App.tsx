@@ -557,6 +557,25 @@ export default function App() {
           setHighScore(user.highScore);
           setScore(user.currentScore ?? 0);
           setTotalRupees(user.rupees ?? 0);
+          setSpinEarnings(user.spinEarnings ?? 0);
+          // Daily ticket grant on session restore
+          const today = new Date().toISOString().slice(0, 10);
+          let tickets = user.spinTickets ?? 0;
+          if (user.lastDailyTicketDate !== today) {
+            tickets = Math.max(tickets, 5);
+            const users2 = getUsers();
+            const idx2 = users2.findIndex((u) => u.username === savedUser);
+            if (idx2 !== -1) {
+              users2[idx2] = {
+                ...users2[idx2],
+                lastDailyTicketDate: today,
+                spinTickets: tickets,
+              };
+              saveUsers(users2);
+            }
+          }
+          setSpinTickets(tickets);
+          blocksPlacedRef.current = user.blocksPlacedSinceLastTicket ?? 0;
           setLoadingProgress(0);
           setGameState("loading");
           let progress = 0;
